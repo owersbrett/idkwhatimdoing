@@ -5,17 +5,20 @@
    ========================================================= */
 
 :root {
-  /* Color (OKLCH, tinted neutrals toward warm hue) */
-  --bg:         oklch(0.965 0.018 70);
-  --surface:    oklch(0.925 0.024 70);
-  --surface-2:  oklch(0.895 0.028 65);
-  --ink:        oklch(0.22 0.018 50);
-  --ink-soft:   oklch(0.34 0.018 50);
-  --muted:      oklch(0.50 0.020 55);
-  --accent:     oklch(0.55 0.155 45);
-  --accent-soft: oklch(0.78 0.060 50);
-  --sage:       oklch(0.55 0.035 120);
-  --rule:       oklch(0.84 0.020 60);
+  /* Color (OKLCH, tinted neutrals toward warm hue).
+     Brand gradient borrowed from potatuhs-design: orange (~#E16416) -> amber -> gold (~#E1C916). */
+  --bg:           oklch(0.965 0.018 70);
+  --surface:      oklch(0.925 0.024 70);
+  --surface-2:    oklch(0.895 0.028 65);
+  --ink:          oklch(0.22 0.018 50);
+  --ink-soft:     oklch(0.34 0.018 50);
+  --muted:        oklch(0.50 0.020 55);
+  --accent:       oklch(0.66 0.180 50);
+  --accent-soft:  oklch(0.82 0.090 70);
+  --brand-start:  oklch(0.66 0.180 50);
+  --brand-mid:    oklch(0.78 0.165 80);
+  --brand-end:    oklch(0.87 0.160 100);
+  --rule:         oklch(0.84 0.020 60);
 
   /* Type */
   --serif:  'Fraunces', 'Times New Roman', serif;
@@ -78,7 +81,7 @@ a:hover {
 
 /* ===== Page shell ===== */
 .page {
-  max-width: 1180px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: var(--s-7) var(--s-5) var(--s-8);
 }
@@ -167,14 +170,22 @@ a:hover {
 }
 
 /* ===== Divider ===== */
+/* Mirrors potatuhs-design `.gdiv`: a flat 3px gradient rule, no ornament. */
 .divider {
   display: block;
   width: 100%;
-  max-width: 380px;
-  height: 14px;
+  max-width: 420px;
+  height: 3px;
+  border: 0;
   margin: var(--s-6) auto;
-  color: var(--accent);
-  opacity: 0.55;
+  background: linear-gradient(
+    90deg,
+    var(--brand-start) 0%,
+    var(--brand-mid) 45%,
+    var(--brand-end) 100%
+  );
+  border-radius: 2px;
+  opacity: 0.92;
 }
 
 /* ===== Manual ===== */
@@ -196,8 +207,8 @@ a:hover {
 .chapter--right {
   grid-template-columns: minmax(0, 1fr) minmax(120px, 200px);
 }
-.chapter--right .chapter__numeral { order: 2; text-align: left; padding-left: var(--s-4); }
-.chapter--right .chapter__body { order: 1; }
+.chapter--right .chapter__body { grid-column: 1; grid-row: 1; }
+.chapter--right .chapter__numeral { grid-column: 2; grid-row: 1; text-align: left; padding-left: var(--s-4); }
 
 .chapter__numeral {
   font-family: var(--serif);
@@ -663,4 +674,231 @@ a:hover {
     transform: none;
     transition: none;
   }
+}
+
+/* =========================================================
+   Day picker (in eyebrow row)
+   ========================================================= */
+.picker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: var(--s-3);
+}
+.picker__label {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+.picker__select {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 28px 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+                    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 12px, calc(100% - 10px) 12px;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+  letter-spacing: 0.02em;
+  transition: border-color 220ms var(--ease-out);
+}
+.picker__select:hover { border-color: var(--accent); }
+.picker__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .picker { margin-left: auto; }
+  .picker__label { display: none; }
+}
+
+/* =========================================================
+   Day wrapper (route key target)
+   ========================================================= */
+.day { display: contents; }
+
+/* =========================================================
+   QA day hero
+   ========================================================= */
+.dayhero {
+  padding: var(--s-3) 0 var(--s-6);
+}
+.dayhero__kicker {
+  font-family: var(--sans);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  margin: 0 0 var(--s-5);
+}
+.dayhero__title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(40px, 6.4vw, 92px);
+  line-height: 1;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  margin: 0;
+  max-width: 18ch;
+  font-variation-settings: 'opsz' 144;
+}
+.dayhero__lead {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(17px, 1.55vw, 21px);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 58ch;
+  margin: var(--s-5) 0 0;
+  font-variation-settings: 'opsz' 36;
+}
+
+/* =========================================================
+   QA entries
+   ========================================================= */
+.qa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-7);
+  margin-top: var(--s-5);
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: minmax(96px, 160px) minmax(0, 1fr);
+  column-gap: var(--s-6);
+  align-items: start;
+}
+.entry--right {
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 160px);
+}
+.entry--right .entry__body { grid-column: 1; grid-row: 1; }
+.entry--right .entry__numeral {
+  grid-column: 2; grid-row: 1;
+  text-align: left;
+  padding-left: var(--s-4);
+}
+
+.entry__numeral {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(72px, 10vw, 140px);
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.82;
+  text-align: right;
+  padding-top: 0.18em;
+  user-select: none;
+  font-variation-settings: 'opsz' 144;
+}
+
+.entry__body { max-width: 760px; }
+
+.entry__head { margin-bottom: var(--s-4); }
+.entry__question {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(30px, 3.8vw, 48px);
+  line-height: 1.08;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  margin: var(--s-2) 0 0;
+  max-width: 24ch;
+  font-variation-settings: 'opsz' 96;
+}
+
+.entry__answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin-bottom: var(--s-5);
+}
+.entry__para {
+  font-family: var(--serif);
+  font-weight: 350;
+  font-size: 18.5px;
+  line-height: 1.65;
+  color: var(--ink);
+  max-width: 64ch;
+  margin: 0;
+  font-variation-settings: 'opsz' 24;
+}
+.entry__para:first-of-type {
+  font-size: 20px;
+  color: var(--ink);
+}
+
+@media (max-width: 880px) {
+  .entry { grid-template-columns: 1fr; column-gap: 0; }
+  .entry--right { grid-template-columns: 1fr; }
+  .entry--right .entry__body,
+  .entry--right .entry__numeral { grid-column: 1; grid-row: auto; }
+  .entry--right .entry__numeral { text-align: left; padding-left: 0; }
+  .entry__numeral { text-align: left; font-size: 80px; margin-bottom: var(--s-3); }
+}
+
+/* =========================================================
+   Lexicon (day-level vocab summary)
+   ========================================================= */
+.lexicon {
+  margin-top: var(--s-7);
+  padding-top: var(--s-5);
+}
+.lexicon__head { max-width: 720px; margin-bottom: var(--s-5); }
+.lexicon__title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(28px, 3.8vw, 48px);
+  line-height: 1.08;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  margin: var(--s-3) 0 var(--s-3);
+  font-variation-settings: 'opsz' 96;
+}
+.lexicon__lead {
+  font-family: var(--serif);
+  font-weight: 350;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 56ch;
+  margin: 0;
+}
+.lexicon__grid {
+  margin: var(--s-4) 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--s-3) var(--s-5);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
+}
+.lexicon__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lexicon__term {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.lexicon__def {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0;
+  line-height: 1.5;
 }
