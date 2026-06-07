@@ -1,13 +1,28 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import Database from 'better-sqlite3';
+import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+function gitCommit(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 // Dev server: http://localhost:4747
 export default defineConfig({
   plugins: [react(), archive({ dbPath: resolve(__dirname, 'archive.db') })],
   server: { port: 4747, strictPort: true },
+  define: {
+    __BUILD_COMMIT__: JSON.stringify(gitCommit()),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
 });
 
 function archive(opts: { dbPath: string }): Plugin {

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { days as archive, type Day } from 'virtual:archive';
+import DebugPanel from './DebugPanel';
+import Legal, { openLegal } from './Legal';
 import ManualDay from './manual';
 import QADay from './qa';
 
@@ -8,6 +10,7 @@ const TODAY = new Date().toISOString().slice(0, 10);
 function initialDate(): string {
   const hash = typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '';
   if (archive.some((d) => d.date === hash)) return hash;
+
   return archive[0]?.date ?? '';
 }
 
@@ -29,13 +32,17 @@ export default function App() {
   if (!day) return null;
 
   return (
-    <main className="page">
-      <AppHeader days={archive} currentDate={day.date} />
-      <div key={day.date} className="day">
-        {day.kind === 'manual' ? <ManualDay /> : <QADay day={day} />}
-      </div>
-      <Colophon day={day} />
-    </main>
+    <>
+      <DebugPanel day={day} />
+      <main className="page">
+        <AppHeader days={archive} currentDate={day.date} />
+        <div key={day.date} className="day">
+          {day.kind === 'manual' ? <ManualDay /> : <QADay day={day} />}
+        </div>
+        <Colophon day={day} />
+      </main>
+      <Legal />
+    </>
   );
 }
 
@@ -105,6 +112,11 @@ function Colophon({ day }: { day: Day }) {
       <p className="colophon__mark">
         <PotatoGlyph />
         <span>Potatuhs</span>
+      </p>
+      <p className="colophon__legal">
+        <button type="button" onClick={openLegal}>
+          Terms &amp; privacy
+        </button>
       </p>
     </footer>
   );

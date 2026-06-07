@@ -1,5 +1,8 @@
-import type { Day, Entry } from 'virtual:archive';
+import { useState } from 'react';
+import type { Day, Entry, Vocab } from 'virtual:archive';
 import { Divider } from './App';
+import { useApiKey } from './apikey';
+import VocabExample from './VocabExample';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -80,6 +83,9 @@ function EntryBlock({ entry, side }: { entry: Entry; side: 'left' | 'right' }) {
 
 function DayLexicon({ day }: { day: Day }) {
   const allVocab = day.entries.flatMap((e) => e.vocab);
+  const hasKey = Boolean(useApiKey());
+  const [openTerm, setOpenTerm] = useState<Vocab | null>(null);
+
   if (allVocab.length === 0) return null;
   return (
     <section className="lexicon" aria-labelledby="lexicon-title">
@@ -89,18 +95,40 @@ function DayLexicon({ day }: { day: Day }) {
           Words and phrases that surfaced.
         </h2>
         <p className="lexicon__lead">
-          The list grows one day at a time. Eval mode (coming soon) will turn these into a circle-back
-          worksheet.
+          The list grows one day at a time.{' '}
+          {hasKey
+            ? 'Tap the example chip beside any term to drill in with a focused tutor chat.'
+            : 'Add your OpenAI key in the debug panel to get an example tutor for every term.'}
         </p>
       </header>
       <dl className="lexicon__grid">
         {allVocab.map((v, i) => (
           <div key={i} className="lexicon__row">
-            <dt className="lexicon__term">{v.term}</dt>
+            <dt className="lexicon__term">
+              {v.term}
+              {hasKey && (
+                <button
+                  type="button"
+                  className="lexicon__example"
+                  onClick={() => setOpenTerm(v)}
+                  aria-label={`Show example for ${v.term}`}
+                >
+                  ex.
+                </button>
+              )}
+            </dt>
             <dd className="lexicon__def">{v.def}</dd>
           </div>
         ))}
       </dl>
+      {openTerm && (
+        <VocabExample
+          key={`${openTerm.term}-${openTerm.def}`}
+          term={openTerm.term}
+          def={openTerm.def}
+          onClose={() => setOpenTerm(null)}
+        />
+      )}
     </section>
   );
 }

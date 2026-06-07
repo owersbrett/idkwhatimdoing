@@ -1,9 +1,9 @@
 {
-  "name": "salesman-school",
+  "name": "idkwhatimdoing",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Date-indexed Q&A archive + Salesman School manual. `npm run dev` serves on http://localhost:4747",
+  "description": "Date-indexed Q&A archive + concept lexicon for self-taught devs learning to work with Claude. `npm run dev` serves on http://localhost:4747",
   "scripts": {
     "db:build": "node scripts/build-db.mjs",
     "dev": "npm run db:build && vite",
