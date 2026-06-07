@@ -5,6 +5,8 @@ import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 function gitCommit(): string {
   try {
     return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
@@ -17,7 +19,11 @@ function gitCommit(): string {
 
 // Dev server: http://localhost:4747
 export default defineConfig({
-  plugins: [react(), archive({ dbPath: resolve(__dirname, 'archive.db') })],
+  plugins: [
+    react(),
+    archive({ dbPath: resolve(__dirname, 'archive.db') }),
+    cloudflare()
+  ],
   server: { port: 4747, strictPort: true },
   define: {
     __BUILD_COMMIT__: JSON.stringify(gitCommit()),
