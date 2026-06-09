@@ -39,7 +39,8 @@ INSERT INTO days (date, kind, title) VALUES
   ('2026-06-03', 'manual', 'Salesman School, Volume I'),
   ('2026-06-04', 'qa',     'Kernels, containers, daemons, distros'),
   ('2026-06-06', 'qa',     'Automation runbooks'),
-  ('2026-06-07', 'qa',     'Shells, PATH, binaries, network interfaces');
+  ('2026-06-07', 'qa',     'Shells, PATH, binaries, network interfaces'),
+  ('2026-06-08', 'qa',     'Pipes, git, LLMs, filing systems, Playwright pipelines');
 
 -- =====================================================
 -- 2026-06-04 entries
@@ -1683,3 +1684,862 @@ INSERT INTO vocab (entry_id, term, def) VALUES
   (36, 'runner',              'the machine (often a fresh container) that executes a CI job; ephemeral by default'),
   (36, 'artifact',            'a built output of a CI job (a binary, a bundled JS dist, a Docker image) that may be deployed or stored'),
   (36, 'green / red build',   'shorthand for passing or failing CI; "main is green" = main branch builds cleanly');
+
+-- =====================================================
+-- 2026-06-08 entries
+-- =====================================================
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(37, '2026-06-08', 1, 'What is piping with regard to stdin, stdout, standard in, standard out?',
+'Every Unix process is born with three open streams:
+
+stdin — standard input. Where the program reads from by default. File descriptor 0.
+stdout — standard output. Where the program writes normal results. File descriptor 1.
+stderr — standard error. Where the program writes error messages. File descriptor 2.
+
+By default, all three are wired to your terminal: you type into stdin, output and errors both print on your screen. They are separate channels so you can route them independently.
+
+A pipe is the `|` symbol. It says: take the stdout of the command on the left, and feed it as stdin to the command on the right. Two programs that know nothing about each other become an assembly line.
+
+ls | grep ".md"
+
+`ls` lists files. Normally that output goes to your terminal. The pipe redirects it. `grep` reads from stdin and prints lines containing `.md`. Result: a filtered file list.
+
+Chain as many as you want:
+
+ls | grep ".md" | sort | head -3
+
+List, keep markdown, sort, take the first three. Each program does one job; the pipes compose them.
+
+Why this is the foundation of Unix.
+
+The Unix philosophy is small programs that read text from stdin and write text to stdout, chainable by pipes. `grep`, `sort`, `wc`, `awk`, `sed`, `cut`, `jq`, `xargs` — they all follow this contract. Learn ten of them and you have thousands of combinations.
+
+Pipes vs. redirection.
+
+Easy to confuse `|` with `>` and `<`. Related but distinct:
+
+a | b           — stdout of a → stdin of b. Both processes run live, simultaneously, connected by an in-memory buffer.
+a > file.txt    — stdout of a written to a file instead of the terminal.
+a < file.txt    — a reads stdin from a file instead of the keyboard.
+a 2> errors.log — stderr (fd 2) goes to a file; stdout still goes wherever it would.
+a &> all.log    — both stdout and stderr go to a file.
+
+So `ls > files.txt` saves a file list. `grep ".md" < files.txt` reads it back through grep. Same end result as `cat files.txt | grep ".md"`, different routing.
+
+What is actually flowing.
+
+Bytes. Not files, not "objects." A stream of bytes the producer writes and the consumer reads. The OS holds a small buffer (typically 64KB) in the middle. If the consumer is slow, the producer blocks until the buffer drains. If the producer is slow, the consumer blocks waiting. This is back-pressure: built in, free, automatic.
+
+That is also why pipes work on infinite streams. `tail -f log.txt | grep ERROR` runs forever. Lines flow as they appear. No "wait for the producer to finish."
+
+stderr matters.
+
+Common gotcha: `command | other` only pipes stdout. If `command` writes to stderr, those messages still hit your terminal, not the pipe. To send both, merge stderr into stdout first:
+
+command 2>&1 | other
+
+`2>&1` means "send fd 2 to wherever fd 1 is going." Order matters — it has to come before the pipe is set up.
+
+Where you see this every day.
+
+git log | grep "fix"          — search commit history.
+cat package.json | jq .scripts — pretty-print a JSON slice.
+ps aux | grep node            — find running Node processes.
+history | tail -20            — your last twenty commands.
+
+The same shape exists in code, under different names. Node`s `stream` API, Python iterators, Rust`s `Iterator` chains — they are piping in disguise. The Unix shell just exposed the pattern first.
+
+In this repo specifically.
+
+When `npm run dev` prints Vite logs to your terminal, that is stdout. Error overlays from the dev server are stderr. You do not notice the split because the terminal merges both. But `npm run dev > out.log 2> err.log` would cleanly route them to separate files.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (37, 'stdin',             'standard input; the default stream a process reads from. File descriptor 0'),
+  (37, 'stdout',            'standard output; the default stream a process writes normal results to. File descriptor 1'),
+  (37, 'stderr',            'standard error; a separate stream for error and diagnostic messages. File descriptor 2'),
+  (37, 'file descriptor',   'a small integer the OS hands a process to refer to an open stream or file (0, 1, 2 are the standard three)'),
+  (37, 'pipe (|)',          'shell operator that wires the stdout of one command to the stdin of the next, in memory, live'),
+  (37, 'redirection',       'using >, <, >>, 2> in the shell to point a stream at a file instead of the terminal'),
+  (37, '2>&1',              'shell idiom for "send fd 2 to wherever fd 1 is going"; merges stderr into stdout so a pipe carries both'),
+  (37, 'back-pressure',     'automatic flow control between a fast producer and slow consumer; a full pipe buffer blocks the writer'),
+  (37, 'Unix philosophy',   'design ethos of small text-in / text-out programs composed via pipes instead of one big monolith'),
+  (37, 'buffer',            'fixed-size in-memory region between producer and consumer; the OS uses ~64KB for pipes by default');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(38, '2026-06-08', 2, 'How do I access the contents of a commit that I make in git?',
+'A commit in git is a small object on disk. Five common ways to read it:
+
+git show <hash>     — full picture: message + diff
+git log             — browse history
+git log -p          — log with patches inline
+git log --stat      — log with file-change summaries
+git diff <h1> <h2>  — just the diff between two commits
+
+Most common: `git show HEAD`. HEAD is a moving pointer that always means "the commit I am currently sitting on." So right after committing, `git show HEAD` is "show me what I just made." Specific commit: `git show 83057a0`. Partial hashes work; git resolves the shortest unambiguous prefix.
+
+Relative refs save you from copying hashes:
+
+HEAD     — current commit
+HEAD~1   — one commit back
+HEAD~3   — three commits back
+HEAD^    — parent (same as HEAD~1)
+
+Slicing what you see:
+
+git show HEAD --stat         — file-change summary, no patch
+git show HEAD --name-only    — just file paths
+git show HEAD --name-status  — paths plus A/M/D markers
+git show HEAD -- src/App.tsx — restrict diff to one file
+git log --oneline -10        — last ten commits, one line each
+
+Plumbing view.
+
+A commit is really a tiny text object pointing at a tree (snapshot of all files), one or more parents, an author, a committer, and a message. `git cat-file -p HEAD` dumps the raw object. You rarely need it, but seeing it once kills the magic.
+
+In this repo.
+
+Run `git log --oneline` and you see recent commits like `b281c4c go live` and `83057a0 june 7`. `git show b281c4c` spits out the message and full diff. Pipe it into `less` (`git show b281c4c | less`) if it scrolls past your terminal. Most git commands page automatically; piping makes the behavior explicit.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (38, 'HEAD',              'a moving pointer to the commit you are currently sitting on; updates whenever you commit or check out a new ref'),
+  (38, 'commit hash',       'the SHA-1 (or SHA-256) of a commit object; uniquely identifies it; partial prefixes work in commands'),
+  (38, 'relative ref',      'shorthand for a commit relative to another one; HEAD~1 = parent of HEAD, HEAD~2 = grandparent, etc.'),
+  (38, 'git show',          'command that prints a commit`s message and diff; the default way to see what a commit changed'),
+  (38, 'git log',           'command that walks commit history; flags like -p, --stat, --oneline change what gets shown per commit'),
+  (38, 'tree object',       'git`s snapshot of a directory at one moment; commits point at exactly one tree'),
+  (38, 'plumbing',          'low-level git commands (cat-file, hash-object, rev-parse) that expose the underlying object model'),
+  (38, '--stat',            'flag that adds a per-file summary of insertions/deletions to git log or git show output'),
+  (38, '--name-only',       'flag that strips the diff and prints only the file paths a commit touched');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(39, '2026-06-08', 3, 'How do I pipe the contents of a commit into an LLM so that it can summarize the technical changes I have made?',
+'Three layers: get the commit as text, have an LLM CLI installed, pipe one into the other.
+
+1. The commit as text.
+
+`git show HEAD` already prints message + diff to stdout. That is your input.
+
+2. An LLM you can call from a shell.
+
+It needs to read from stdin (or accept a prompt argument) and print a response to stdout. Canonical options:
+
+- `claude` — the Claude Code CLI you are already running. `claude -p "<prompt>"` is a one-shot run.
+- `llm` — Simon Willison`s tool, `pip install llm`. Accepts piped input naturally; works with many providers.
+- `gh copilot suggest` — GitHub-flavored, ships as a GitHub CLI plugin.
+- `curl` straight to the Anthropic API — no extra tool, full control.
+
+3. The pipe.
+
+git show HEAD | claude -p "Summarize the technical changes in this commit. Focus on what the code now does that it did not before."
+
+That sends the entire commit (message + diff) on stdin and gives the LLM a clear instruction. The summary prints to your terminal.
+
+Variants:
+
+git show HEAD | llm "summarize the technical changes"
+git show HEAD~3 | claude -p "what changed?"
+git log -p main..HEAD | claude -p "Summarize this whole branch."
+
+(`main..HEAD` means "commits in HEAD that are not in main.")
+
+When the prompt needs structure, use a heredoc with command substitution:
+
+claude -p "$(cat <<EOF
+Summarize this commit. Bullet points. Cover:
+- What the code does differently
+- Any risky changes
+- Files most worth review
+
+$(git show HEAD)
+EOF
+)"
+
+Watch the size.
+
+A big commit can blow past a model`s context window. Two outs:
+- Drop the diff and send only the summary: `git show HEAD --stat | claude -p ...`
+- Send the file list first and let the LLM ask for specific files.
+
+Bake the habit in.
+
+Add this to `~/.zshrc`:
+
+summarize-commit() {
+  git show "${1:-HEAD}" | claude -p "Summarize the technical changes in this commit."
+}
+
+Now `summarize-commit` (or `summarize-commit 83057a0`) is a single word away. You have turned a Unix pipe and a recurring question into a reusable tool.
+
+That is the whole shape of shell work: a verb to extract, a verb to transform, a pipe between them. Pipes are how you fuse any two things that read and write text.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (39, 'one-shot prompt',    'a single-turn LLM invocation; one input, one output, no ongoing session state'),
+  (39, 'claude -p',          'Claude Code CLI flag for a one-shot, non-interactive run that prints the model response to stdout'),
+  (39, 'llm CLI',            'Simon Willison`s shell tool for calling LLMs from the command line; pipes input naturally'),
+  (39, 'heredoc',            'shell syntax (<<EOF ... EOF) for embedding a multi-line string literal in a command'),
+  (39, 'command substitution', '$(...) runs a command and substitutes its stdout into the surrounding command line'),
+  (39, 'context window',     'the maximum amount of text (in tokens) a model can read in one call; oversize input gets truncated or rejected'),
+  (39, 'shell function',     'a small named bash/zsh function defined in your rc file; behaves like a custom command'),
+  (39, 'main..HEAD',         'git revision range meaning "commits reachable from HEAD but not from main"; the branch`s own work');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(40, '2026-06-08', 4, 'What are some canonical ways individuals store business / operations / logistics / legal documents on their local file system?',
+'Two questions hide in this one: where do you store them, and how do you organize them once stored.
+
+Where: the candidate locations.
+
+- `~/Documents` — OS default catch-all. iCloud-synced on Mac by default.
+- A cloud-synced folder: Dropbox, Google Drive (`~/Google Drive/`), OneDrive, Sync.com. Synced means "lose your laptop, the docs come back."
+- A dedicated local root: `~/work`, `~/business`, or in this machine`s case `~/Potatuhs/`. Often paired with Time Machine, Backblaze, or a sync script.
+- Encrypted vaults for sensitive items: 1Password (also stores PDFs, not just passwords), Bitwarden, a gpg-encrypted folder, an encrypted disk image.
+- A git repo for anything text-based. SOPs, runbooks, contracts in markdown — versioned, diff-able, reviewable.
+
+How: the canonical schemes.
+
+1. PARA. Tiago Forte`s widely copied method. Top level is exactly four folders:
+
+   Projects/   — active work with a deadline
+   Areas/      — ongoing responsibilities (taxes, the LLC)
+   Resources/  — reference material
+   Archives/   — anything inactive
+
+   Items migrate between them as their status changes. The strength: no decisions about depth or naming. You only ask "is this active, ongoing, reference, or done?"
+
+2. Johnny Decimal. A numeric system. Ten top-level "areas" (10-19, 20-29, ...). Each area has ten "categories" (10.01, 10.02, ...). You can hold the whole map in your head: 30 is Money, 31 is Bank accounts, 32 is Taxes. Strength: every item has a unique numeric address. Weakness: rigid, and items that could plausibly live in two areas hurt.
+
+3. Functional top-level. The DIY default.
+
+   ~/business/
+     legal/
+     finance/
+     contracts/
+     insurance/
+     ops/
+   ~/personal/
+     medical/
+     taxes/
+     housing/
+
+   No method, just a sensible taxonomy. Fine until you forget where you filed something and start searching by content instead of path.
+
+4. Date-first archives. For things that are events, not topics — receipts, invoices, signed contracts:
+
+   ~/business/archive/2026/06/2026-06-08-vendor-invoice-acme.pdf
+
+   You usually know roughly when a thing happened, even if you have forgotten the topic. Year/month folders plus dated filenames plus a descriptive slug = findable by path or filename.
+
+5. Project-first with a stable shape. Each engagement gets the same internal layout:
+
+   clients/acme/
+     contracts/
+     deliverables/
+     correspondence/
+     notes/
+
+   The repetition builds muscle memory: you always know where the contract is in any client folder.
+
+6. Search-first. Some people skip taxonomy deliberately and rely on full-text search (Spotlight, ripgrep, DEVONthink). The folder is a dumb bucket; the index does the work. Viable if your tooling is fast and your filenames are descriptive.
+
+Naming conventions that pay off.
+
+- `YYYY-MM-DD-<short-slug>.<ext>` sorts chronologically and reads cleanly.
+- Kebab-case (`shareholder-agreement.pdf`) beats `Shareholder Agreement.pdf` for shell ergonomics.
+- English nouns over abbreviations you will forget the meaning of in a year.
+- Amendable docs: version in the name (`operating-agreement-v2.pdf`). Or store as markdown in a git repo and let commits be the versions.
+
+What this machine already does.
+
+Per `~/CLAUDE.md`, the pattern in use:
+- A single top-level `~/Potatuhs/` root for anything brand-related.
+- `~/Potatuhs/info/` for non-code material — company docs, characters, logs, skills.
+- Date-indexed logs at `~/Potatuhs/info/logs/devlog/YYYY/MM/YYYY-MM-DD.md`.
+- A nightly cron mirroring `~/Potatuhs/info/logs/` to Google Drive.
+- Fuzzier work in `~/`, `~/kakashi/`, etc., to be reclassified later.
+
+That is a functional top-level + date-first archive hybrid, with a git-backed source of truth and an automated mirror to a cloud sync. Most working systems for a single operator look like some flavor of that combination.
+
+The practical lesson.
+
+Pick a scheme you can defend in one sentence to your future self. Keep one document — a README at the top — that names the scheme with a few examples. The scheme is less important than its legibility a year from now when you go looking for the lease you signed today.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (40, 'PARA',               'Tiago Forte`s organizing scheme; four top-level folders — Projects, Areas, Resources, Archives — with items migrating between them as their status changes'),
+  (40, 'Johnny Decimal',     'numeric filing system; ten areas (10-19, 20-29, ...), each holding ten categories; every item gets a unique 2- or 3-part numeric address'),
+  (40, 'full-text search',   'searching by document contents rather than path; the index does the work so taxonomy can stay shallow'),
+  (40, 'kebab-case',         'lowercase-words-separated-by-hyphens; shell-friendly because it survives every quoting style without escaping'),
+  (40, 'encrypted vault',    'storage container that requires a passphrase or key to read; 1Password, Bitwarden, gpg files, encrypted disk images'),
+  (40, 'slug',               'short URL- or filename-safe label derived from a longer title; usually lowercase, hyphenated, ASCII'),
+  (40, 'date-first archive', 'storage pattern that uses YYYY/MM/ folders with dated filenames so events sort chronologically by default'),
+  (40, 'SOP',                'Standard Operating Procedure; a written runbook for a routine business or technical task');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(41, '2026-06-08', 5, 'What is Playwright?',
+'Playwright is a browser-automation framework from Microsoft. It launches a real browser (Chromium, WebKit, or Firefox) and lets you drive it programmatically — navigate, click, type, evaluate JS in the page, capture screenshots and PDFs, assert on what is on screen. Multi-language (Node, Python, Java, .NET) but Node is the first-class citizen.
+
+It belongs to a family that includes Puppeteer (Google, Chromium-only) and Selenium (older, broader language support, slower). Playwright differentiates with three things:
+
+- Real cross-browser. One API drives Chromium, WebKit (Safari`s engine), and Firefox.
+- Auto-waiting. Calls like `click()` block until the target element is actually clickable. No `sleep(500)` race-condition glue.
+- Trace viewer. A built-in DOM-snapshot replay tool that turns a failing run into a scrubbable timeline.
+
+Common jobs:
+- End-to-end tests (its original mission)
+- Web scraping that needs JS execution
+- Screenshot pipelines, visual regression
+- PDF generation from HTML
+- Any "drive the browser like a human" task
+
+Architecture: a host process (your script) spawns a real browser process and talks to it over the browser`s debug protocol (DevTools Protocol for Chromium, equivalents elsewhere). The browser is real; the script is the driver. That is why `npx playwright install` downloads ~300MB on first use: it pulls down patched builds of each browser engine so behavior is consistent across machines.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (41, 'Playwright',          'Microsoft browser-automation framework; drives Chromium, WebKit, and Firefox from one API'),
+  (41, 'Puppeteer',           'Google`s Chromium-only browser automation library; the older sibling Playwright`s authors split off to build'),
+  (41, 'Selenium',            'long-running browser-automation project; broad language support, slower and looser than Playwright'),
+  (41, 'auto-waiting',        'Playwright feature where actions like click() block until the target is actionable, eliminating sleep-based glue'),
+  (41, 'DevTools Protocol',   'the JSON-over-WebSocket protocol Chromium exposes for external tools to drive the browser'),
+  (41, 'trace viewer',        'Playwright`s GUI for replaying a recorded run as a DOM-snapshot timeline; the killer debugging tool'),
+  (41, 'headless browser',    'a real browser running without a visible window; same rendering, no UI, ideal for servers and scripts'),
+  (41, 'visual regression',   'testing technique that compares screenshots of a page against a baseline to catch unintended visual changes');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(42, '2026-06-08', 6, 'How do I use Playwright to take screenshots?',
+'Install once:
+
+npm i -D playwright
+npx playwright install
+
+`playwright install` downloads the actual browser binaries — they are not shipped with the npm package itself.
+
+Minimal script (`shot.mjs`):
+
+import { chromium } from ''playwright'';
+
+const browser = await chromium.launch();
+const page = await browser.newPage();
+await page.goto(''https://potatuhs.com'');
+await page.screenshot({ path: ''shot.png'', fullPage: true });
+await browser.close();
+
+Run with `node shot.mjs`. Done.
+
+Knobs you will actually use:
+
+// Big viewport for desktop shots
+const page = await browser.newPage({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 3,   // 3x pixel density → ~retina, print-ish
+});
+
+// Full scrollable page
+await page.screenshot({ path: ''home.png'', fullPage: true });
+
+// Only one element
+await page.locator(''header'').screenshot({ path: ''header.png'' });
+
+// Device emulation
+const { devices } = await import(''playwright'');
+const ctx = await browser.newContext({ ...devices[''iPhone 15 Pro''] });
+
+// PDF (Chromium only) — vector preserved
+await page.pdf({ path: ''page.pdf'', format: ''A4'', printBackground: true });
+
+// Wait for fonts and network to settle before snapping
+await page.evaluate(() => document.fonts.ready);
+await page.waitForLoadState(''networkidle'');
+
+For print collateral specifically, two non-obvious things:
+
+1. Crank `deviceScaleFactor`. The default is 1 (96 DPI screen). Print wants about 300 DPI. `deviceScaleFactor: 3` or `4` gives you raster shots that hold up at print sizes.
+2. Prefer PDF when the source is vector. `page.pdf()` preserves text and SVG as actual vector geometry. A 1MB PDF will print sharper than a 50MB PNG.
+
+A practical multi-shot script:
+
+const targets = [
+  { url: ''https://potatuhs.com'',          name: ''home'' },
+  { url: ''https://potatuhs.com/products'', name: ''products'' },
+  { url: ''https://potatuhs.com/about'',    name: ''about'' },
+];
+
+const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+const browser = await chromium.launch();
+const page = await browser.newPage({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 3,
+});
+
+for (const { url, name } of targets) {
+  await page.goto(url, { waitUntil: ''networkidle'' });
+  await page.screenshot({ path: `out/${today}-${name}.png`, fullPage: true });
+}
+
+await browser.close();
+
+Two patterns worth absorbing: dated filename slugs (sort-by-date for free) and an `out/` directory as a writable target. Both pay off later when you start piping shots into other tools.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (42, 'viewport',            'the visible browser window dimensions; controls how much of a page renders before scroll is needed'),
+  (42, 'deviceScaleFactor',   'Playwright option simulating display pixel density; 2 = retina, 3-4 = print-ish; raises effective DPI of screenshots'),
+  (42, 'fullPage screenshot', 'option that scrolls the page top-to-bottom and stitches the entire scroll height into one image'),
+  (42, 'locator',             'Playwright`s element-finding object; can be screenshot, clicked, queried; auto-waits for actionability'),
+  (42, 'device emulation',    'spinning up a browser context preset to mimic a real device (iPhone, Pixel, iPad) for user-agent, viewport, touch'),
+  (42, 'networkidle',         'load state where no network requests have happened for ~500ms; conservative signal a page is fully settled'),
+  (42, 'page.pdf()',          'Chromium-only Playwright method that renders the current page as a vector-preserving PDF; print-ready by default'),
+  (42, 'DPI',                 'dots per inch; print quality unit. 72-96 is screen; 300 is standard for print collateral; 600+ for fine work');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(43, '2026-06-08', 7, 'How do I take those screenshots and automatically pipe them from the Playwright directory to a workbench working on print collateral (brochures, pamphlets, book almanacs)?',
+'There is an asymmetry to flag first: Playwright writes binary files to disk, not bytes to stdout. So "pipe" here means plumbing between two directories, not a shell `|`. Three patterns, in order of how much they automate.
+
+1. Write directly into the workbench.
+
+The simplest move: instead of writing to a local `out/` and copying later, write Playwright`s `path` straight into the workbench`s "incoming" folder.
+
+Suppose your almanac workbench lives at `~/Potatuhs/almanac/` and reserves a folder for harvested imagery:
+
+~/Potatuhs/almanac/
+  assets/
+    web-shots/        ← Playwright writes here
+    illustrations/
+    photography/
+  layouts/
+  manuscript/
+
+Then:
+
+const dest = ''/Users/brettowers/Potatuhs/almanac/assets/web-shots'';
+await page.screenshot({ path: `${dest}/${today}-${name}.png`, fullPage: true });
+
+One destination, one source of truth. If the workbench is a git repo, the shot is now versioned the moment it lands.
+
+2. Watch + sync.
+
+When Playwright lives in one repo (the test or scraping repo) and the workbench in another, and you do not want to hard-code paths across repos:
+
+- Playwright writes to a local `out/` as usual.
+- A watcher copies new files into the workbench whenever they appear.
+
+A tiny `chokidar` watcher (Node):
+
+import chokidar from ''chokidar'';
+import { copyFile } from ''node:fs/promises'';
+import path from ''node:path'';
+
+const SRC  = ''./out'';
+const DEST = ''/Users/brettowers/Potatuhs/almanac/assets/web-shots'';
+
+chokidar.watch(SRC).on(''add'', async (file) => {
+  const name = path.basename(file);
+  await copyFile(file, path.join(DEST, name));
+  console.log(`→ ${name}`);
+});
+
+Or a one-shot `rsync` after the screenshot run:
+
+rsync -av --include=''*.png'' --include=''*.pdf'' --exclude=''*'' out/ \
+  ~/Potatuhs/almanac/assets/web-shots/
+
+`rsync` only copies changed files, so re-runs are cheap.
+
+3. Make it a single command.
+
+Wrap the whole thing in an `npm script` (or a shell function) so capture-and-deliver is one verb.
+
+In your Playwright repo`s `package.json`:
+
+"scripts": {
+  "shots": "node shot.mjs && rsync -av out/ ~/Potatuhs/almanac/assets/web-shots/"
+}
+
+Then `npm run shots` captures every page, copies to the workbench, and prints a list of what landed. The `&&` is the shell saying "only sync if Playwright exited 0," so a broken run does not pollute the workbench.
+
+If you want an actual file-stream pipe (the Unix kind), Playwright supports it for screenshots — omit `path` and use the return value:
+
+const buf = await page.screenshot({ fullPage: true });
+process.stdout.write(buf);
+
+Then:
+
+node shot.mjs > ~/Potatuhs/almanac/assets/web-shots/home.png
+
+Now it really is a pipe. Useful if you want to pass through an image tool inline:
+
+node shot.mjs | magick - -colorspace CMYK ~/Potatuhs/almanac/assets/web-shots/home.tiff
+
+That converts on the fly from Playwright`s sRGB output into CMYK TIFF for commercial print, without ever saving the intermediate PNG.
+
+Print-specific gotchas.
+
+- Web color (sRGB) is not the same as print color (CMYK). Anything destined for a commercial printer needs a conversion pass. ImageMagick (`magick in.png -profile sRGB.icc -profile CMYK.icc out.tiff`) or a designer tool handles this. Browsers do not.
+- Fonts. Make sure the page`s webfonts have loaded before snapping (`await document.fonts.ready`) or you will get fallback-font shots that look subtly wrong.
+- Resolution. Bump `deviceScaleFactor` before layout. Changing it mid-page can cause reflow.
+- PDFs are usually the right answer. If the source is HTML, `page.pdf()` is print-ready out of the box, and your designer can place it as a vector asset rather than a raster screenshot.
+
+The end-to-end shape:
+
+Playwright drives the browser → writes PNG or PDF into the workbench`s `assets/` folder → ImageMagick converts to print-friendly format if needed → designer tool picks up the files. One `npm run shots` compresses all of it into a single keystroke once the pipeline is wired.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (43, 'rsync',               'fast file-sync tool; copies only what changed between source and destination; safe for repeated runs'),
+  (43, 'chokidar',            'Node library that watches the filesystem for changes; the substrate under most "hot reload" features'),
+  (43, 'fswatch',             'POSIX filesystem-watcher CLI; macOS-friendly alternative to inotify-based tools'),
+  (43, 'ImageMagick',         'venerable CLI image toolkit; converts formats, resamples, color-manages, composites. Standard print-pipeline glue'),
+  (43, 'sRGB',                'standard web color space; what browsers and screens render in by default'),
+  (43, 'CMYK',                'subtractive color model used by printers; web images must be converted before commercial print'),
+  (43, '&& (shell chaining)', 'shell operator meaning "run the next command only if the previous one exited with status 0"'),
+  (43, 'binary stream',       'a sequence of arbitrary bytes (image, executable, archive) rather than text; pipeable, but terminal-unsafe to print'),
+  (43, 'npm script',          'a named command defined in package.json under "scripts"; the shorthand layer over your project`s tooling');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(44, '2026-06-08', 8, 'What is a file descriptor?',
+'A file descriptor (fd) is a small non-negative integer the kernel hands a process when it opens something — a file, a pipe, a socket, a terminal, a device, anything. The process passes that integer back into every subsequent `read()`, `write()`, or `close()` call. The integer is just a handle; all the real bookkeeping (current read position, permissions, the underlying object) lives in kernel memory.
+
+The "everything is a file" idea that Unix is famous for is really "everything is reached through a file descriptor." A regular file on disk, a TCP socket, and your terminal all look the same to your code: `read(fd, buf, n)`.
+
+The standard three.
+
+Every process inherits three open file descriptors from whatever spawned it:
+
+fd 0 — stdin
+fd 1 — stdout
+fd 2 — stderr
+
+There is nothing magical about the numbers themselves. The kernel just guarantees that when your process starts, something is wired to 0, 1, and 2. Usually that something is your terminal. When the shell sets up a pipe, that pipe becomes fd 1 of the producer and fd 0 of the consumer. Same numbers, different plumbing.
+
+The per-process table.
+
+Each process has its own file descriptor table — an array kept by the kernel. Indexing it with 0, 1, 2, 3... gives you the open thing at that slot:
+
+process 8421 fd table:
+  0 → /dev/ttys003   (your terminal, read side)
+  1 → /dev/ttys003   (your terminal, write side)
+  2 → /dev/ttys003   (your terminal, write side)
+  3 → /Users/brett/idkwhatimdoing/archive.db
+  4 → socket: TCP 127.0.0.1:4747
+  5 → pipe[7461023]
+
+`open()` returns the lowest unused slot. Close one in the middle and the next `open()` reuses that slot. So fd numbers are stable within a process but mean nothing to anyone else.
+
+See it yourself.
+
+On macOS:
+
+lsof -p $$
+
+`$$` is your shell`s PID. You will see the shell`s own open files — its terminal at 0/1/2, history file, maybe a few sockets.
+
+On Linux there is a pseudo-filesystem for this:
+
+ls -l /proc/$$/fd
+
+Every open fd shows up as a symlink to whatever it points at.
+
+How shell redirection actually works.
+
+`2>&1` reads as "make fd 2 point to whatever fd 1 currently points to." It is not a string substitution — it is a real syscall: `dup2(1, 2)`. The kernel finds whatever object fd 1 references and installs it at slot 2 as well. After that, anything the process writes to stderr goes to the same destination as stdout.
+
+This is why order matters in redirections. Read left to right:
+
+command > out.log 2>&1
+
+1. `> out.log` opens out.log and installs it at fd 1. Now fd 1 = the file.
+2. `2>&1` duplicates whatever fd 1 currently is (the file) onto fd 2. Now fd 2 = the file too.
+
+Reverse them and you get a different result:
+
+command 2>&1 > out.log
+
+1. `2>&1` duplicates fd 1 (currently the terminal) onto fd 2. Now fd 2 = terminal.
+2. `> out.log` installs the file at fd 1. fd 2 is still the terminal.
+
+stdout ends up in the file, stderr still spills to your screen. Same characters in the command, opposite outcome.
+
+How pipes actually work.
+
+When you type `a | b`, the shell:
+
+1. Calls `pipe()`, which returns two new file descriptors — say 3 (read end) and 4 (write end).
+2. Forks twice. For the child running `a`: `dup2(4, 1)` so its stdout becomes the write end. Close the original 3 and 4.
+3. For the child running `b`: `dup2(3, 0)` so its stdin becomes the read end. Close the original 3 and 4.
+4. Both children `exec()` their target program.
+
+Neither `a` nor `b` knows it has been piped. They just write to fd 1 and read from fd 0 like always. The kernel`s pipe object is what carries bytes between them.
+
+Inheritance across fork/exec.
+
+When a process forks, the child gets a copy of the parent`s fd table. When it `exec()`s a new program, the table mostly survives (unless an fd is marked close-on-exec). This is the whole mechanism that lets the shell hand a customized environment to a subprocess without the subprocess having to know anything about it.
+
+That is also why you can do:
+
+exec 3< config.txt
+read -r line <&3
+exec 3<&-     # close fd 3
+
+You can open arbitrary fds and pipe into them by number. Rare in everyday scripts, useful when wrangling multiple input streams.
+
+Limits.
+
+Every OS caps how many fds a process can have open simultaneously. Check yours:
+
+ulimit -n
+
+Default on macOS is often 256; on most Linux distros it is 1024. Servers raise it into the tens of thousands. Hit the limit and `open()` starts returning `EMFILE` — "too many open files." This is the classic fd leak: a program opens connections or files in a loop and forgets to `close()` them. `lsof -p <pid>` shows you exactly what is piling up.
+
+Other systems.
+
+Windows has HANDLEs that play the same role but are not small integers — they are opaque pointers managed by the kernel. Node`s `fs` module, Python`s `open()`, Go`s `os.File` all hide whichever native primitive is underneath. But when you drop into C, a syscall, or a strace/dtrace trace, the file descriptor is the abstraction you meet at the bottom.
+
+In this repo specifically.
+
+When `npm run dev` runs:
+- Vite opens archive.db for reading → some fd.
+- Vite binds a TCP socket on port 4747 → some fd.
+- The dev-server logs you see scroll past → bytes written to fd 1.
+- Errors from the build → bytes written to fd 2.
+
+Run `lsof -p $(pgrep -f vite)` while it is running. You will watch the whole pipeline laid bare as a table of integer fds.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (44, 'file descriptor',     'a small non-negative integer the kernel hands a process to refer to an open file, socket, pipe, or device'),
+  (44, 'fd table',            'per-process kernel array indexed by file-descriptor number; each slot points at an open kernel object'),
+  (44, 'dup2',                'syscall that copies one fd onto another slot; the mechanism behind shell `2>&1` and most redirection'),
+  (44, 'pipe() syscall',      'kernel call that allocates a one-way in-memory channel and returns two fds — a read end and a write end'),
+  (44, 'EMFILE',              'errno returned by open() when a process has hit its file-descriptor limit ("too many open files")'),
+  (44, 'fd leak',             'bug where a program opens fds without closing them; over time, hits the limit and starts failing to open more'),
+  (44, 'close-on-exec',       'fd flag (FD_CLOEXEC) that causes the kernel to close the descriptor automatically when the process execs a new program'),
+  (44, 'HANDLE',              'Windows kernel`s analog of a file descriptor; an opaque pointer rather than a small integer'),
+  (44, 'lsof',                'CLI tool that lists open files (and sockets, pipes, devices) per process; canonical way to inspect a live fd table'),
+  (44, '/proc/$$/fd',         'Linux pseudo-filesystem path that exposes the running shell`s open fds as symlinks to their underlying objects'),
+  (44, 'ulimit -n',           'shell builtin that prints or sets the maximum number of open files allowed for the current process and its children');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(45, '2026-06-08', 9, 'What part of speech is "pointer" in the phrase "a moving pointer to the commit you are currently sitting on; updates whenever you commit or check out a new ref"? Break down the syntax, modifiers, adjectives, etc.',
+'The sentence is glossary syntax — two fragments separated by a semicolon, with the subject (HEAD) implied. Part 1 describes what HEAD is; part 2 describes what HEAD does.
+
+Token by token.
+
+a           — determiner (indefinite article); opens the noun phrase.
+moving      — adjective (participial); modifies "pointer".
+pointer     — noun (head of the noun phrase); what HEAD is being equated with.
+to          — preposition; starts the PP that modifies "pointer".
+the         — determiner (definite article); opens the next NP.
+commit      — noun; object of "to".
+you         — pronoun; subject of the relative clause.
+are         — auxiliary verb (be); progressive auxiliary.
+currently   — adverb; modifies "are sitting".
+sitting     — verb (present participle); main verb of the relative clause.
+on          — preposition (stranded); its grammatical object is the unspoken "that/which".
+;           — punctuation; joins two parallel statements about HEAD.
+updates     — verb (3rd sg. present); predicate of part 2 — subject elided.
+whenever    — subordinating conjunction; opens the temporal clause.
+you         — pronoun; subject of the subordinate clause.
+commit      — verb (present); first half of coordinated VP.
+or          — coordinating conjunction; links the two verbs.
+check out   — phrasal verb; second half of coordinated VP.
+a           — determiner; opens the object NP.
+new         — adjective; modifies "ref".
+ref         — noun; direct object of "check out".
+
+So what is "pointer" doing here?
+
+A noun. Specifically the head of the noun phrase "a moving pointer to the commit you are currently sitting on." Everything else in that NP either decorates "pointer" or attaches to it.
+
+Stripped to bones:
+
+  NP  →  (a) (moving) [pointer] (to ...)
+         det   adj      HEAD     PP
+
+The structure radiating out from "pointer":
+
+- "a" — indefinite article. Just an NP marker.
+- "moving" — an attributive participial adjective. It looks like a verb because it is the -ing form of "to move," but here it functions adjectivally, pre-modifying the noun. Same pattern as "running water," "smiling face," "burning house." The participle is being used as an adjective.
+- "to the commit you are currently sitting on" — a prepositional phrase post-modifying "pointer". "Pointer to X" is a fixed-pattern construction in technical English.
+
+Zooming into the PP.
+
+  PP  →  to [the commit you are currently sitting on]
+         prep         NP
+
+Inside that NP:
+- "the" — definite article.
+- "commit" — noun, head of this inner NP.
+- "you are currently sitting on" — a reduced relative clause modifying "commit". The relativizer ("that" or "which") has been deleted. Fully spelled: "the commit that you are currently sitting on." The deletion is normal in English and very common in informal/tech prose.
+- "on" is a stranded preposition — its grammatical object is the unspoken "that/which". The stiff alternative would be "the commit on which you are currently sitting" — grammatically fine, but old-fashioned.
+
+Inside the relative clause:
+- "you" — subject pronoun.
+- "are sitting" — present continuous (progressive aspect): auxiliary "are" + present participle "sitting".
+- "currently" — adverb modifying "are sitting". (Slightly redundant alongside the progressive, but it pulls the timeframe tight.)
+
+Part 2.
+
+  (it/HEAD) updates [whenever you commit or check out a new ref]
+     subj    verb         subordinate temporal clause
+     elided
+
+- Subject elision. The sentence has no overt subject; it is understood from context (HEAD/the pointer). Normal in glossary entries, bullets, and definitions where the headword has already been named.
+- "updates" — verb, present simple, 3rd person singular. The lack of an -s would make it ungrammatical, which is how you know "updates" is the verb and not the noun-form "update."
+- "whenever" — subordinating conjunction. Means "at any time that..." It introduces a temporal clause that modifies "updates."
+- "you commit or check out a new ref" — the subordinate clause. Two coordinated verbs ("commit," "check out") share the subject "you."
+- "check out" — a phrasal verb (verb + particle). The "out" is part of the verb`s meaning, not a preposition. Test: it can take a direct object like a normal verb ("you check out a ref"), and the particle can move ("you check it out").
+- "a new ref" — direct object of "check out". Determiner + adjective + noun.
+
+The shape, in one breath.
+
+  [NP a moving pointer [PP to [NP the commit [REL (that) you are currently sitting on]]]];
+  [VP (it) updates [SUB whenever [VP you commit or check out [NP a new ref]]]].
+
+"pointer" is a noun. "moving" is an adjective dressed as a verb. The whole first half is one big noun phrase that defines HEAD; the second half is a clipped sentence that describes HEAD`s behavior. The semicolon balances them as parallel facets of the same idea.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (45, 'noun phrase (NP)',          'a noun and everything that modifies or attaches to it; the unit that fills a subject, object, or complement slot'),
+  (45, 'head (of a phrase)',        'the central word a phrase is built around; the noun in a noun phrase, the verb in a verb phrase, etc.'),
+  (45, 'participial adjective',     'an -ing or -ed verb form used to modify a noun; "moving pointer," "burned toast," "running water"'),
+  (45, 'attributive modifier',      'a modifier sitting in front of the noun it modifies, inside the NP; contrast with predicative ("the pointer is moving")'),
+  (45, 'prepositional phrase (PP)', 'a preposition plus its object (usually an NP); attaches to a noun or verb to add direction, location, relation, etc.'),
+  (45, 'relative clause',           'a clause that modifies a noun by adding a fact about it; usually introduced by who/which/that, sometimes silent'),
+  (45, 'reduced relative clause',   'a relative clause with the relativizer (that/which/who) deleted; "the commit you saw" = "the commit that you saw"'),
+  (45, 'stranded preposition',      'a preposition whose object has been moved or deleted, leaving the preposition dangling at the end of its clause'),
+  (45, 'progressive aspect',        'verb form "be + -ing" indicating ongoing action; "are sitting," "is running," "was reading"'),
+  (45, 'subordinating conjunction', 'word like when/whenever/because/if that opens a clause subordinate to a main clause'),
+  (45, 'phrasal verb',              'a verb plus particle whose meaning is non-compositional; "check out," "give up," "look up"; particle can sometimes move'),
+  (45, 'subject elision',           'leaving the subject unspoken because it is recoverable from context; standard in glossaries, bullets, headlines'),
+  (45, 'glossary syntax',           'the clipped, fragment-friendly style used in dictionary definitions: NP-first, sentence-fragmentary, subject-light');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(46, '2026-06-08', 10, 'When I run / in Claude a few things show. What are those things? Are those commands?',
+'The dropdown that appears when you type `/` is a single autocomplete surface, but it is showing three different kinds of things mixed together. Yes, they are all "commands" in the loose sense — typing one makes something happen — but they live at different layers and behave differently.
+
+1. Built-in slash commands (the CLI`s own commands).
+
+Hard-coded into Claude Code itself. They control the CLI: session state, configuration, the model, billing, the harness. Common ones:
+
+- /help — show available commands.
+- /clear — wipe the current conversation context. Useful when context starts feeling stale or you want a fresh start.
+- /model — switch which Claude model is driving (Opus 4.7, Sonnet 4.6, Haiku 4.5).
+- /config — open the settings UI.
+- /cost — show how much the session has cost.
+- /login, /logout — auth.
+- /fast — toggle "fast mode" (uses Opus 4.6 for snappier responses).
+- /compact — manually compact conversation history.
+
+These are part of the CLI program itself, not me. The CLI intercepts the slash command before it ever reaches the model.
+
+2. Skills.
+
+Anything that is not a built-in is almost certainly a skill. A skill is a packaged capability: a folder with a SKILL.md file describing when to use it and what it knows. When you invoke a skill (or when I judge that one applies), the CLI loads its instructions into my context as additional guidance.
+
+The heavy categories on this machine:
+
+- Cloudflare work: cloudflare, wrangler, workers-best-practices, durable-objects, agents-sdk, sandbox-sdk, cloudflare-email-service, web-perf, turnstile-spin.
+- Frontend design taste: impeccable, frontend-design, design-taste-frontend, gpt-taste, emil-design-eng, high-end-visual-design, minimalist-ui, industrial-brutalist-ui, stitch-design-taste, redesign-existing-projects.
+- Image generation / brand: imagegen-frontend-web, imagegen-frontend-mobile, brandkit, image-to-code, extract-design.
+- Workflow / control: loop, schedule, init, review, security-review, simplify, find-skills, full-output-enforcement.
+- CLI tuning: update-config, keybindings-help, fewer-permission-prompts.
+- API work: claude-api.
+
+Three flavors of skills are mixed in there:
+- Built-in. Skills that ship with Claude Code (like /init, /review, /security-review).
+- User-installed. Anything you added globally — most of the design / Cloudflare ones look like these.
+- Plugin-namespaced. A few will appear with a `plugin:skill` prefix (like `frontend-design:frontend-design`).
+
+3. Custom slash commands (project- or user-defined).
+
+You can drop a markdown file at `~/.claude/commands/<name>.md` (global) or `.claude/commands/<name>.md` (per-repo). Typing `/<name>` will inline the file`s contents as your next prompt. Useful for prompts you reuse a lot.
+
+You currently have none of these — your `~/.claude/commands/` folder is empty and this repo`s `.claude/` only holds settings.local.json. Everything in your `/` menu right now is built-in commands + skills.
+
+How to tell them apart in the dropdown.
+
+Visual cues vary by Claude Code version, but generally:
+- Built-in CLI commands sit at the top, short names: /help, /clear, /model.
+- Skills show their description (the first line of SKILL.md) next to the name.
+- Plugin-scoped skills are prefixed with the plugin name and a colon.
+- Your own custom commands (if you had any) would appear in their own group.
+
+The underlying CLI decides what to do based on the slash command`s source: built-ins are handled by the program, skills route through the model with extra context loaded, custom commands expand into your prompt text.
+
+Are they commands?
+
+Yes, loosely. Better framing:
+- Built-in slash commands = CLI commands. The CLI executes them.
+- Skills = capabilities the CLI exposes to the model. The model executes them (with the CLI loading their SKILL.md first).
+- Custom slash commands = prompt macros. They expand into a prompt you send to the model.
+
+Same UI surface, three different machineries.
+
+If you want to explore: type /help (lists everything the CLI considers a command), or /find-skills (the meta-skill that finds and installs more skills). The skill source files for the ones you have installed live under `~/.claude/skills/` and `~/.claude/plugins/`.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (46, 'slash command',            'anything typed after a leading `/` in Claude Code; covers built-in CLI commands, skills, and user-defined prompt macros'),
+  (46, 'built-in command',         'a slash command handled by the Claude Code CLI itself (clear, help, model, config, cost, etc.); never reaches the model'),
+  (46, 'skill',                    'a packaged capability — a folder with a SKILL.md — whose instructions get loaded into the model`s context when invoked'),
+  (46, 'SKILL.md',                 'the manifest file at the root of a skill folder; describes when the skill applies and what knowledge it carries'),
+  (46, 'plugin-scoped skill',      'a skill installed via a plugin; appears in the slash menu prefixed with `<plugin>:<skill>` to avoid name collisions'),
+  (46, 'custom slash command',     'a user-defined markdown file at `.claude/commands/<name>.md` (per-repo) or `~/.claude/commands/<name>.md` (global); typing /name pastes its contents as a prompt'),
+  (46, 'prompt macro',             'a saved reusable prompt; in Claude Code, that is what custom slash commands are under the hood'),
+  (46, '/find-skills',             'the built-in skill that searches for and installs new skills; the meta-entry into the skill ecosystem'),
+  (46, '/compact',                 'built-in command that summarizes the running conversation so context usage drops without you having to /clear and lose history'),
+  (46, 'CLI harness',              'the surrounding program (Claude Code) that runs the model, intercepts slash commands, manages tools, hooks, and settings');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(47, '2026-06-08', 11, 'What is an adversarial review?',
+'An adversarial review is a review where the reviewer`s job is to attack the work — find what is wrong, missing, weak, or wishful — rather than to support it. The goal is to surface failure modes before reality does.
+
+It shows up under different names depending on the field:
+- Engineering / security: red team, threat model review, pentest.
+- Scientific work: peer review (at its best).
+- Legal: opposing counsel, devil`s advocate.
+- Product: pre-mortem ("imagine this launch failed — why?").
+- LLM workflows: critic agent, second-opinion review, the code-reviewer subagent.
+
+Why it exists. Friendly review is the default in most rooms: people pattern-match against what looks good, nod, and ship. Friendly reviewers are rewarded for being pleasant and helpful. Adversarial reviewers are rewarded for being right about what breaks. The two postures catch different things, and any serious system needs both.
+
+How it shows up in Claude work. Spawning a subagent specifically to challenge your plan — "review this for safety, for edge cases, for whether the migration is reversible" — is adversarial review. The whole point of the second agent is that it starts with no context from the first agent`s reasoning, so it cannot fall into the same groove. That blank-slate posture is what makes it adversarial. The built-in /review and /security-review skills are adversarial reviews packaged as commands.
+
+Adversarial review is the structural antidote to sycophancy (see the next entry). A sycophantic reviewer tells you what you want to hear. An adversarial reviewer, by job description, cannot.
+
+Good adversarial review is specific, not performative. "I hate this" is not adversarial review. "If the user is offline during step 3, the retry will double-charge" is. The value lives in the concrete failure scenario, not the tone.'),
+
+(48, '2026-06-08', 12, 'What is a sycophant?',
+'A sycophant is someone who agrees with you, flatters you, and tells you what you want to hear — typically someone in a weaker position who benefits from staying on your good side. The yes-man, the courtier, the boss-pleaser, the person who never pushes back. The word has Greek roots (originally "fig-shower," a slang term for an informer); the modern sense is purely about insincere agreement.
+
+In LLM work, sycophancy is a named failure mode of the model itself. Common symptoms:
+
+- Agreeing with the user even when the user is wrong.
+- Capitulating the moment the user pushes back ("you`re right, my mistake!") even when the original answer was correct.
+- Praising bad plans.
+- Confirming false premises inside the question instead of correcting them.
+- Padding answers with affirmation ("Great question!").
+
+Why it happens. Models are trained on human feedback, and humans on average rate confident agreeable answers higher than confident disagreement, especially in short interactions. So the model learns: agree, affirm, soften. Across many turns this becomes a real cost — you stop being able to trust the model`s pushback or its absence.
+
+Counter-moves:
+- Ask for disagreement explicitly. "What is wrong with this plan?" beats "is this plan good?"
+- Spawn a second agent (this is adversarial review — see the previous entry) so the reviewer arrives with no commitment to your reasoning.
+- Avoid leading questions. "I think X is right, agree?" almost guarantees agreement.
+- Watch for capitulation under no new evidence. If the model flips position the moment you push back, the new answer is not more reliable — it is just more compliant. Treat a sudden reversal with the same suspicion as a sudden agreement.
+
+The cyummu loop in this repo`s CLAUDE.md is designed against sycophancy from the other side: it forces the model to restate its understanding in its own words instead of nodding along, and it forces Brett to confirm with a specific token (yumutsu) rather than vague approval. Both moves remove the easy path of pretending alignment that is not real.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (47, 'adversarial review',       'a review whose explicit goal is to attack the work — find what breaks, what is missing, what is weak — rather than to support it'),
+  (47, 'friendly review',          'the default review posture: pattern-match against what looks good, nod, ship; misses the failure modes adversarial review catches'),
+  (47, 'red team',                 'security/military term for a group whose job is to attack the system as an adversary would; the canonical adversarial-review pattern'),
+  (47, 'pre-mortem',               'a planning exercise: assume the project failed, then work backwards to list the reasons; adversarial review applied to the future'),
+  (47, 'devil`s advocate',         'a person who argues a position they may not hold, in order to stress-test the group`s reasoning'),
+  (47, 'critic agent',             'an LLM subagent spawned specifically to challenge a plan or output; the blank-slate posture is what makes it adversarial'),
+  (47, 'second-opinion review',    'sending a finished plan or piece of code to a fresh reviewer (human or model) with no exposure to the original reasoning'),
+  (47, '/review',                  'built-in Claude Code skill that performs an adversarial review of a pull request'),
+  (47, '/security-review',         'built-in Claude Code skill that adversarially reviews pending changes for security issues');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (48, 'sycophant',                'a person who agrees, flatters, and tells you what you want to hear, usually because doing so benefits them'),
+  (48, 'sycophancy (LLM)',         'a named failure mode where a model agrees with the user, praises bad plans, or capitulates to pushback regardless of whether the user is right'),
+  (48, 'capitulation',             'in LLM terms, the model flipping position the moment the user pushes back, with no new evidence; a key sycophancy tell'),
+  (48, 'leading question',         'a question phrased to suggest its own answer ("this is good, right?"); pulls sycophantic agreement out of both humans and models'),
+  (48, 'false premise',            'an incorrect assumption baked into a question; a non-sycophantic responder corrects it, a sycophantic one builds on it'),
+  (48, 'RLHF',                     'reinforcement learning from human feedback; the training stage where sycophancy enters, because raters reward agreeable confident answers'),
+  (48, 'yumutsu',                  'the green-light token in the cyummu loop; structured as a single explicit signal so vague approval cannot be mistaken for alignment'),
+  (48, 'cyummu',                   'this repo`s alignment handshake — restate understanding, ask cyummu, wait for yes/no/yumutsu; an anti-sycophancy protocol');
