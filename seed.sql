@@ -2543,3 +2543,191 @@ INSERT INTO vocab (entry_id, term, def) VALUES
   (48, 'RLHF',                     'reinforcement learning from human feedback; the training stage where sycophancy enters, because raters reward agreeable confident answers'),
   (48, 'yumutsu',                  'the green-light token in the cyummu loop; structured as a single explicit signal so vague approval cannot be mistaken for alignment'),
   (48, 'cyummu',                   'this repo`s alignment handshake — restate understanding, ask cyummu, wait for yes/no/yumutsu; an anti-sycophancy protocol');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(49, '2026-06-08', 13, 'What is Zaraz in Cloudflare?',
+'Zaraz is Cloudflare`s server-side third-party tool manager. Think Google Tag Manager, but the tags do not run in the visitor`s browser — they run on Cloudflare`s edge. The browser sends one small request to Cloudflare; Cloudflare fans out to Google Analytics, Meta Pixel, Hotjar, Mixpanel, and whatever else you have wired up, server-side.
+
+Cloudflare acquired the original Zaraz startup in late 2021 and rolled it into the platform as a free-tier-included feature on all Cloudflare plans.
+
+The problem it solves.
+
+A modern marketing page often loads twenty-plus third-party scripts: GA4, Meta Pixel, LinkedIn Insight, Hotjar, Intercom, Segment, a chat widget, four ad-network tags, a consent popup. Each:
+- adds 50–500 KB of JS to your bundle
+- opens a TCP/TLS connection to a third-party host
+- runs JS on the visitor`s main thread
+- reads cookies and storage they probably should not see
+- tanks Core Web Vitals (especially INP and LCP)
+- is a privacy/legal liability (GDPR, CCPA, the cookie banner spiral)
+
+Zaraz takes those twenty scripts out of the browser. The browser still calls one tiny endpoint — `/cdn-cgi/zaraz/...` on your domain — and Cloudflare`s Worker-edge handles the rest. That single request can fan out to ten downstream APIs server-side, and the visitor never knew.
+
+How it actually works.
+
+The architecture in three pieces:
+1. A small client script Zaraz injects on your page (a few KB).
+2. An edge worker at `/cdn-cgi/zaraz/*` on every domain you have enabled it for. This is the brain.
+3. The Zaraz config stored in the Cloudflare dashboard, defining which tools to fire and what to send each one.
+
+When a visitor hits your page:
+- The Zaraz client collects page view + event data.
+- It POSTs that data to Cloudflare`s edge worker (same-origin — no third-party request).
+- The worker reads your config, transforms the payload into each tool`s expected format, and makes the outbound calls server-side: GA`s Measurement Protocol, Meta`s Conversions API, etc.
+- The browser is done after one request.
+
+What you do as a user.
+
+You do not write integration code per tool. You go into the Cloudflare dashboard → Zaraz → Tools, and pick from a catalog of preset integrations (GA4, Meta Pixel, TikTok Pixel, Hotjar, Mixpanel, Segment, Pinterest, Reddit, Hubspot, etc.). Each one asks for a credential (a measurement ID, a pixel ID) and lets you map events.
+
+For custom events from your code:
+
+  zaraz.track(''purchase'', { value: 49.99, currency: ''USD'' });
+  zaraz.set(''plan'', ''pro'');
+
+That single call gets fanned out to every tool configured to listen for it. Switching analytics providers later = one dashboard change, not a code refactor.
+
+There is also Zaraz Consent — a built-in consent manager so you can gate which tools fire based on a visitor`s cookie preferences. It plugs into the same pipeline.
+
+How it differs from Google Tag Manager.
+
+GTM runs tags in the browser. Zaraz runs them on Cloudflare`s edge. Performance cost: high vs. near zero. Privacy posture: third parties get full browser context vs. you control exactly what leaves the edge. Setup: container snippet plus per-tag JS vs. a toggle in dashboard. Cost: free for client-side GTM, but the server-side GTM container costs money on GCP, vs. free tier included on Cloudflare.
+
+GTM Server-Side exists for the same reason Zaraz exists — server-side tagging is the modern direction — but it requires you to run Google`s container on GCP and pay for it. Zaraz is the same idea wrapped into Cloudflare`s normal billing.
+
+Where it would fit in the Potatuhs stack.
+
+Several public-facing Potatuhs sites — potatuhs-web (Hydrogen storefront), potatocore-web (Next.js), potatoliterature-web, hud — could turn on Zaraz with one click if their domain is already routed through Cloudflare (Pages, Workers, or a CF-fronted custom domain). The Hydrogen storefront especially benefits — Shopify storefronts get pummeled by marketing pixels by default, and Zaraz is the cleanest way to keep Core Web Vitals green without dropping any of them.
+
+What it cannot do: anything that must run in the browser (UI widgets like a live chat panel, A/B test variant rendering). Those still need their script in the page. Zaraz is for the data-collection layer, not the UX layer.
+
+Gotchas.
+
+- It is a Cloudflare-domain feature: the site has to be proxied through Cloudflare (orange-clouded), not just registered there.
+- The free tier has event limits per month; heavy traffic sites eventually pay.
+- Server-side tracking sidesteps client-side ad blockers — which is usually framed as a benefit, but it is worth understanding that is part of the value prop, and it has ethical/legal implications worth thinking about.
+- "First-party tracking" sounds private but is not automatically — you still need consent flows if you are sending data to third-party processors.
+
+TL;DR. Zaraz = Cloudflare`s edge-side tag manager. One browser request fans out to every analytics/marketing tool you have configured, server-side. Faster pages, fewer third-party scripts, free on Cloudflare. Most useful for the Hydrogen storefront and any marketing-heavy Potatuhs site.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (49, 'Zaraz',                    'Cloudflare`s server-side third-party tool manager; runs analytics and marketing tags on the edge instead of in the browser'),
+  (49, 'tag manager',               'a system for installing and configuring third-party scripts (analytics, pixels, ads) without redeploying your site code'),
+  (49, 'server-side tagging',       'pattern where third-party SDKs are invoked from your servers instead of the visitor`s browser; better perf, more control, harder to ad-block'),
+  (49, 'Google Tag Manager (GTM)',  'Google`s tag manager; the de facto industry standard, originally browser-side, now also has a server-side container product'),
+  (49, 'third-party script',        'JS loaded from a domain you do not control; the main cause of marketing-page bloat and a major Core Web Vitals risk'),
+  (49, 'Core Web Vitals',           'Google`s headline page-experience metrics: LCP (largest contentful paint), INP (interaction to next paint), CLS (cumulative layout shift)'),
+  (49, 'Meta Conversions API',      'Meta (Facebook) endpoint for sending conversion events server-side instead of via the browser pixel; what Zaraz calls under the hood'),
+  (49, 'Measurement Protocol',      'GA`s HTTP endpoint for posting events server-side; lets Zaraz emulate the gtag.js client without shipping that script'),
+  (49, 'consent management',        'flow for collecting and respecting a visitor`s tracking preferences; Zaraz Consent ties consent state into which tools fire'),
+  (49, 'orange-clouded',            'Cloudflare term for a DNS record proxied through Cloudflare`s network (the orange cloud icon); required for edge features like Zaraz to work'),
+  (49, '/cdn-cgi/',                 'reserved URL path on every Cloudflare-proxied domain; Cloudflare uses it to expose features like Zaraz, Trace, Bot Management without needing extra DNS'),
+  (49, 'first-party tracking',      'tracking that originates from your own domain rather than a third-party origin; bypasses many cookie/ITP restrictions but is not automatically privacy-safe');
+
+-- =====================================================
+-- 2026-06-10 day + entries
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-06-10', 'qa', 'Image tokens, TSX, randomness, and a live design teardown');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(50, '2026-06-10', 1, 'What is the difference in Claude token usage for images in Claude Code vs describing what code might look like?',
+'Images are billed by pixel area: roughly (width x height) / 750 tokens. A typical screenshot costs ~1,100-1,600 tokens; on current high-res models (Opus 4.7+) a full-resolution image can run up to ~4,800 tokens. A typed description is usually far cheaper -- English text averages ~3.5-4 characters per token, so a solid paragraph describing a UI is only 100-300 tokens. But token count is not the whole story: an image carries exact layout, spacing, colors, and text with zero ambiguity, while a prose description of equivalent fidelity would be longer AND still lossy. Rule of thumb: for visual things (UI mockups, rendering bugs, design references), a screenshot is worth its ~1,500 tokens. For code, never screenshot it -- paste the actual text. Code-as-text is exact, cheaper, and the model reads it directly instead of OCRing pixels.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (50, 'token', 'The unit LLMs read and bill by. Roughly 3.5-4 English characters or 3/4 of a word. Both your input and the model''s output are measured in tokens.'),
+  (50, 'vision tokens', 'The token cost of an image, computed from its pixel dimensions (about width x height / 750), not from its file size. A 1MB PNG and a 100KB JPEG of the same dimensions cost the same.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(51, '2026-06-10', 2, 'Is there a way to get VS Code to not open the integrated browser and instead open Google Chrome like it used to?',
+'Yes -- the integrated preview is VS Code''s "Simple Browser", and a setting controls which surface opens. The usual culprit when a dev server starts in the terminal is port auto-forwarding: "remote.otherPortsAttributes": {"onAutoForward": "openBrowser"} opens your external browser instead of "openPreview" (the integrated one). To force Chrome specifically rather than the OS default, set "workbench.externalBrowser": "chrome". If the Live Preview extension is installed, it has its own setting: "livePreview.openPreviewTarget": "External Browser".');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (51, 'Simple Browser', 'VS Code''s built-in minimal browser tab. Handy for quick previews, but no devtools, extensions, or real Chrome behavior.'),
+  (51, 'port auto-forwarding', 'VS Code watches processes in its terminal; when one starts listening on a port (like a dev server on 5173), it can auto-open that URL. The onAutoForward setting decides where: integrated preview or external browser.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(52, '2026-06-10', 3, 'What is "localizable"?',
+'"Localizable" means capable of being adapted to a specific locale -- a language plus regional conventions (date formats, currency, number separators, text direction). In code, marking something as localizable means the user-facing text is not hardcoded inline; it lives in a resource file keyed by an identifier, so translators can swap in other languages without touching code. iOS literally names this file Localizable.strings; web apps use JSON locale files like en.json / es.json. Related shorthand: i18n (internationalization -- engineering the app so it CAN be localized) and l10n (localization -- actually producing the translations). The numbers count the letters between the first and last letter of each word.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (52, 'locale', 'A language + region combo (like en-US vs en-GB) that determines translations, date/number formats, and currency.'),
+  (52, 'i18n / l10n', 'Internationalization: building the app so text and formats are swappable. Localization: producing the actual per-locale translations. The numbers count the letters omitted between first and last letter.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(53, '2026-06-10', 4, 'What is TSX as it pertains to HTML? Is it a superset of JS? Is it a wrapper around HTML?',
+'TSX is TypeScript + JSX. Two separate ingredients: TypeScript is a superset of JavaScript (adds types). JSX is a syntax extension that lets you write HTML-looking tags inside that code. So a .tsx file is typed JavaScript that permits angle-bracket syntax. Crucially, JSX is NOT HTML and not a wrapper around it -- it is syntactic sugar that a compiler transforms into plain function calls. <div className="card">Hi</div> becomes jsx("div", {className: "card", children: "Hi"}), which returns a JavaScript object DESCRIBING an element. React takes that tree of descriptions and creates/updates the real DOM (actual HTML) in the browser. That is why JSX differs from HTML in small ways: className instead of class (class is a JS reserved word), camelCase attributes like onClick, curly braces to embed expressions, and every tag must close. Mental model: HTML is the final rendered document; JSX is a template-looking layer of function calls that produces a blueprint for it; TSX is that same thing with type checking.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (53, 'JSX', 'JavaScript XML -- syntax extension letting you write HTML-like tags in JS. Compiles to function calls returning element-description objects, not actual HTML.'),
+  (53, 'superset', 'A language containing all of another language plus more. Every valid JS file is valid TypeScript; the reverse is not true.'),
+  (53, 'transpile', 'Compile source code into another language at a similar level of abstraction -- e.g. TSX into plain JavaScript the browser can run.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(54, '2026-06-10', 5, 'What about PDFs as it pertains to token usage?',
+'PDFs are the expensive case because each page is processed TWICE: the page is rendered as an image (billed by pixel area, like a screenshot) AND its text is extracted and billed as normal text tokens. Budget roughly 1,500-3,000 tokens per page for typical documents -- more for dense or visual pages. That dual processing is the point: Claude can read the words and also see the layout, tables, charts, and figures. API limits are around 100 pages / 32MB per request; in Claude Code the Read tool pages through PDFs in chunks (max 20 pages per read). Cost-saving rule: if you only need the words -- a contract, an article, plain prose -- extract the text first (pdftotext, copy-paste) and send that, which can be 5-10x cheaper. Send the actual PDF when the visual structure carries meaning: tables, charts, forms, scanned documents, anything where layout is part of the information.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (54, 'text extraction', 'Pulling the raw character data out of a PDF (e.g. pdftotext). Cheap and exact for digital PDFs, but loses layout and fails on scans, which are just pictures of text.'),
+  (54, 'OCR', 'Optical character recognition -- recovering text from an image of text. What a model must effectively do when a PDF page is a scan rather than digital text.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(55, '2026-06-10', 6, 'Is it possible to use open source libraries and Python to convert images/PDFs/documents into text files to optimize for LLMs before passing them in?',
+'Yes -- this is a common and recommended preprocessing pattern, and a whole ecosystem exists for it. Purpose-built LLM converters: markitdown (Microsoft) converts PDF/Word/PowerPoint/Excel/images/HTML to Markdown; Docling (IBM) does high-quality PDF-to-Markdown with table structure; marker specializes in PDF-to-Markdown including equations. Lower-level tools: PyMuPDF and pdfplumber for digital PDF text/tables; pytesseract (Tesseract), PaddleOCR, or EasyOCR for scanned pages and images; OCRmyPDF to add a text layer to scans; python-docx/openpyxl/python-pptx for Office files; pandoc for general document conversion. Markdown is the target format of choice because LLMs parse its structure (headings, tables, lists) natively and it is token-dense. The tradeoff: conversion is lossy -- charts, figures, and complex layouts vanish or mangle. The pragmatic pattern is hybrid: convert prose pages to text/Markdown (5-10x cheaper) and pass genuinely visual pages through as images.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (55, 'preprocessing pipeline', 'Code that runs before the expensive step -- here, converting heavy formats into cheap token-dense text so the LLM call costs less and works better.'),
+  (55, 'Markdown as LLM format', 'Markdown is the preferred conversion target: structure (headings, tables, lists) survives as plain text the model parses natively, with near-zero markup overhead compared to HTML or XML.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(56, '2026-06-10', 7, 'What is the difference between a QA professional and a tester?',
+'Tester is the narrower role: execute tests against software and report defects -- find what is broken. QA (quality assurance) is the broader discipline: own quality across the whole development process, which includes testing but also preventing defects in the first place -- reviewing requirements for ambiguity, defining test strategy, setting release criteria, building test plans, tracking quality metrics, improving the process that produced the bugs. Classic framing: testing/QC is product-focused and detection-oriented (is this build broken?); QA is process-focused and prevention-oriented (why do builds keep breaking, and how do we stop that?). In practice titles blur heavily and many companies use them interchangeably. A related modern title is SDET (Software Development Engineer in Test) -- an engineer who writes automation frameworks and test infrastructure rather than manually executing test cases.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (56, 'QA vs QC', 'Quality assurance is prevention -- improving the process so defects do not get created. Quality control is detection -- inspecting the product to find defects that already exist. Testing is a QC activity.'),
+  (56, 'SDET', 'Software Development Engineer in Test. Writes the automation: test frameworks, CI test suites, tooling. A programming role aimed at quality rather than features.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(57, '2026-06-10', 8, 'What is true randomness vs perceived randomness?',
+'True randomness is genuinely unpredictable -- each outcome cannot be determined from what came before, even in principle. Physical sources like radioactive decay, thermal noise, or quantum measurement provide it; computers harvest such entropy for cryptography. Perceived randomness is whether a sequence LOOKS random to a human -- and our intuition is famously bad at judging this. True randomness produces clusters and streaks (flip a fair coin 100 times and runs of 6+ heads are expected), but humans read clusters as patterns, so a truly random sequence often feels rigged while a carefully alternating fake feels random. This is why Spotify changed its shuffle: real shuffle plays the same artist back-to-back, users complained, so Spotify made it LESS random to feel MORE random. Related: computers normally use pseudorandom number generators (PRNGs) -- deterministic algorithms seeded with a starting value that produce statistically random-looking output. Same seed, same sequence, which is great for reproducible tests and useless against attackers, which is why cryptography uses CSPRNGs fed by hardware entropy.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (57, 'PRNG', 'Pseudorandom number generator -- a deterministic algorithm that produces random-looking numbers from a seed. Same seed, same sequence.'),
+  (57, 'entropy (computing)', 'Unpredictability collected from physical sources (timing jitter, hardware noise) that an OS uses to seed secure random number generation.'),
+  (57, 'clustering illusion', 'The human tendency to see streaks and clusters in genuinely random data as meaningful patterns.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(58, '2026-06-10', 9, 'What is the story about the monkeys and the typewriters?',
+'The infinite monkey theorem: a monkey hitting typewriter keys at random for an infinite amount of time will almost surely eventually type any given text -- including the complete works of Shakespeare. It is a probability thought experiment, not a zoology claim: given infinite independent random trials, any outcome with nonzero probability occurs with probability 1 ("almost surely"). The catch is scale: the chance of randomly typing even "hamlet" is (1/26)^6 -- about 1 in 300 million -- and a full play pushes the odds so far down that the expected wait dwarfs the age of the universe. A 2024 paper calculated that all the chimpanzees on Earth typing until the heat death of the universe would almost certainly never produce Shakespeare. The theorem is true only because infinity is genuinely, incomprehensibly bigger than any finite number. (A 2003 art experiment gave real macaques a keyboard: they typed mostly the letter S and urinated on it.) The idea is used in computing and statistics to illustrate brute-force search, the law of large numbers, and why "possible in principle" and "feasible in practice" are very different claims.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (58, 'infinite monkey theorem', 'Given infinite random trials, any outcome with nonzero probability happens almost surely -- e.g. random typing eventually producing Shakespeare.'),
+  (58, 'almost surely', 'Probability-theory term: an event with probability 1. Other outcomes are not impossible, they just have probability zero in the infinite limit.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(59, '2026-06-10', 10, 'Is there a way to not precompile/serve audio content but have a button that reads paragraphs aloud?',
+'Yes -- the browser has built-in text-to-speech via the Web Speech API: speechSynthesis.speak(new SpeechSynthesisUtterance(text)). It synthesizes on the fly on the user''s device: no server, no audio files, no build step, works offline, costs nothing. You can pick voices (speechSynthesis.getVoices()), set rate/pitch, and pause/resume -- enough for a "read this entry aloud" button in a few lines of React. Tradeoff: voice quality varies by OS/browser (macOS voices are decent, others robotic). The upgrade path if quality matters is a TTS API (OpenAI, ElevenLabs, Google) generating audio on demand -- but that reintroduces a server call and cost. For an archive reader button, the native API is the right starting point.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (59, 'Web Speech API', 'Browser-native speech interfaces: speechSynthesis (text-to-speech) and SpeechRecognition (speech-to-text). Client-side, free, no network required.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(60, '2026-06-10', 11, 'What does find-skills do in Claude?',
+'find-skills is a discovery skill: when you ask "how do I do X" or "is there a skill for X", it searches the ecosystem of installable agent skills and helps you find and install one that matches. Skills are folders of instructions (a SKILL.md plus supporting files) that load into Claude on demand to give it specialized procedures -- like recipes it pulls off the shelf only when relevant. find-skills is the librarian for that shelf: it exists so you do not have to already know a skill''s name to benefit from it.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (60, 'agent skill', 'A folder of markdown instructions (SKILL.md) that teaches Claude a specialized procedure. Loaded on demand, not always in context -- progressive disclosure keeps the token cost near zero until used.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(61, '2026-06-10', 12, 'What does /impeccable do in Claude?',
+'/impeccable is a frontend design-quality skill: invoke it when you want to design, redesign, critique, polish, or audit a UI. It covers visual hierarchy, typography, spacing, color, accessibility, responsive behavior, motion, UX copy, error states, and anti-patterns -- essentially a senior design reviewer''s checklist encoded as a skill. Use it to make bland designs bolder, loud designs quieter, or to do a structured UX audit of an existing interface. It pairs naturally with a Playwright-driven review: Playwright gathers the evidence (screenshots, computed styles, overflow checks) and the design skill supplies the judgment about what good looks like.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (61, 'slash command', 'Typing /name in Claude Code invokes a skill directly by name instead of waiting for Claude to decide it is relevant.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(62, '2026-06-10', 13, 'How is the dedicated Node.js DevTools sending print messages back to my server? That seems odd.',
+'It is actually the reverse direction: your Node process is the server and DevTools is a client subscribed to it. When Node starts with inspection enabled it opens a WebSocket endpoint (the "inspector", default port 9229 -- if 9229 is taken it uses 9230). Chrome''s dedicated Node DevTools auto-discovers that local port and attaches over the Chrome DevTools Protocol (CDP) -- the same wire protocol Playwright uses to drive the browser. Once attached, every console.log in your server code is emitted as a CDP "console API called" event and streamed over that WebSocket to DevTools, which renders it. Nothing goes back INTO your server except debug commands you issue (set breakpoint, evaluate expression). So: not your server pushing prints out to Chrome mysteriously -- Chrome dialed into a debug socket your Node process was already listening on, localhost-only.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (62, 'inspector protocol / CDP', 'Chrome DevTools Protocol -- a JSON-over-WebSocket protocol for debugging. Node exposes it on port 9229; DevTools, VS Code, and Playwright are all just CDP clients.'),
+  (62, 'port 9229', 'Node''s default inspector port. If busy, Node picks the next one (9230). Localhost-only by default, which is why this is not a security hole.');

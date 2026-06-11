@@ -14,12 +14,17 @@ function initialDate(): string {
   return archive[0]?.date ?? '';
 }
 
+function isEntryAnchor(hash: string): boolean {
+  return /^entry-\d+$/.test(hash);
+}
+
 export default function App() {
   const [date, setDate] = useState<string>(initialDate);
 
   useEffect(() => {
     const onHash = () => {
       const h = window.location.hash.replace(/^#/, '');
+      if (isEntryAnchor(h)) return;
       setDate(archive.some((d) => d.date === h) ? h : archive[0]?.date ?? '');
     };
     window.addEventListener('hashchange', onHash);
@@ -127,18 +132,7 @@ export function Divider() {
 }
 
 export function PotatoGlyph() {
-  return (
-    <svg viewBox="0 0 40 32" width="28" height="22" aria-hidden>
-      <path
-        d="M6 18 C 4 8, 14 2, 22 4 C 32 6, 38 14, 36 22 C 34 28, 24 30, 16 28 C 8 26, 8 24, 6 18 Z"
-        fill="currentColor"
-        opacity="0.92"
-      />
-      <circle cx="16" cy="14" r="1.1" fill="var(--bg)" />
-      <circle cx="25" cy="19" r="0.9" fill="var(--bg)" />
-      <circle cx="20" cy="22" r="0.7" fill="var(--bg)" />
-    </svg>
-  );
+  return <img className="potatomark" src="/potatuhs.png" alt="" width={32} height={32} />;
 }
 
 function useReveal(key: string) {

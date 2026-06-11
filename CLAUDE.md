@@ -41,13 +41,16 @@ The directory **is** the database. No external DB, no service. Files on disk are
 - **Navigation = a dropdown** of every dated page, today as default.
 - **Eval mode** = pick a day, generate a multiple-choice worksheet from that day's questions. The circle-back. Confirms the concept actually stuck.
 
+### What is decided
+
+- **Web stack.** Vite + React 19, served via Cloudflare (wrangler). `npm run dev` on port 4747.
+- **Record format.** SQLite. **`seed.sql` is the source of truth** — day rows plus entries/vocab with explicit ids. `archive.db` is a build artifact: `scripts/build-db.mjs` deletes and rebuilds it from `seed.sql` on every `npm run dev` / `npm run build`. **Never write entries to `archive.db` directly — they will be silently wiped on the next rebuild.** Append INSERTs to `seed.sql` (matching its existing style), then run `node scripts/build-db.mjs`. This was learned the hard way on 2026-06-10.
+- **Capture mechanism.** Manual: when Brett asks a substantive question, Claude appends the entry to `seed.sql` as part of answering, then rebuilds the db.
+
 ### What is intentionally undecided
 
 These are open and should not be invented by future sessions without a cyummu:
 
-- **Web stack.** Next.js, Vite, plain HTML — TBD.
-- **Record format.** One MD file per day, JSON, or both — TBD.
-- **Capture mechanism.** Default for now is **manual**: when Brett asks a question, Claude writes the entry to today's page as part of answering. Cleaner to demo on camera. A hook-based automatic capture is a possible later upgrade, not the starting state.
 - **Worksheet generation.** Inline at view time, or pre-generated and stored — TBD.
 
 When any of these get decided, update this section.

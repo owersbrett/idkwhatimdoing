@@ -15,7 +15,7 @@ export default function ManualDay() {
 function Hero() {
   return (
     <header className="hero">
-      <p className="hero__kicker reveal">A short, friendly manual.</p>
+      <div className="hero__kicker reveal">A short, friendly manual.</div>
       <h1 className="hero__title reveal" style={{ ['--reveal-delay' as string]: '60ms' }}>
         Eight things <em>under</em> the website,
         <br />
