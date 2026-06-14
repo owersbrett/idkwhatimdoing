@@ -4,6 +4,7 @@
 
 PRAGMA foreign_keys = ON;
 
+DROP TABLE IF EXISTS sections;
 DROP TABLE IF EXISTS vocab;
 DROP TABLE IF EXISTS entries;
 DROP TABLE IF EXISTS days;
@@ -29,6 +30,19 @@ CREATE TABLE vocab (
   term      TEXT NOT NULL,
   def       TEXT NOT NULL,
   FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE
+);
+
+-- Derived layer: a brochure is a distillation of a day's entries + vocab into
+-- "things we learned" panels (3 columns x 9 per side). Generated FROM
+-- entries/vocab and committed here as a build artifact; entries stay canonical.
+CREATE TABLE sections (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  day_date  TEXT NOT NULL,
+  position  INTEGER NOT NULL,
+  kicker    TEXT,
+  label     TEXT NOT NULL,
+  body      TEXT NOT NULL,
+  FOREIGN KEY (day_date) REFERENCES days(date) ON DELETE CASCADE
 );
 
 -- =====================================================
@@ -2731,3 +2745,170 @@ INSERT INTO entries (id, day_date, position, question, answer) VALUES
 INSERT INTO vocab (entry_id, term, def) VALUES
   (62, 'inspector protocol / CDP', 'Chrome DevTools Protocol -- a JSON-over-WebSocket protocol for debugging. Node exposes it on port 9229; DevTools, VS Code, and Playwright are all just CDP clients.'),
   (62, 'port 9229', 'Node''s default inspector port. If busy, Node picks the next one (9230). Localhost-only by default, which is why this is not a security hole.');
+
+-- =====================================================
+-- 2026-06-13 entries
+-- =====================================================
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-06-13', 'qa', 'Localization, the searchability tax, and grep-able i18n');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(63, '2026-06-13', 1, 'In a TSX/React project, does localizing strings mean referencing a key instead of a hardcoded string, with a service detecting the user''s preference -- and does that indirection make searching the codebase slower, the way it does in iOS/Flutter?',
+'Yes on the model, with one important twist. The React pattern (libraries: react-i18next, react-intl/FormatJS, LinguiJS): a provider/context at the app root holds the active locale and a loaded message catalog (usually one JSON file per language, en.json/es.json); locale negotiation detects the user preference from navigator.language, a saved setting, or a URL segment, and falls back to a default when a key is missing; the component renders t(''byok.heading'') instead of the literal. On the searchability pain: the observation is correct but web is usually a SHALLOWER chain than iOS/Flutter. The thing that makes Swift/Flutter bounce you through 3-4 files is a GENERATED constant layer (Localizable.strings -> L10n.home.sidebar.apiKeyTitle -> unpack in the view). react-i18next typically has no generated var -- the key maps directly to a value in en.json, so worst case is two hops: search string -> en.json -> grep key -> component. The deeper truth: the searchability tax is a CHOICE, not inherent to i18n. Two schools exist. Key-based (react-i18next, react-intl with bare IDs): the English lives only in the catalog, so searching the string finds en.json and nothing else -- exactly the described pain. Message-based / inline-default (LinguiJS macros, or react-intl with defaultMessage): you write <Trans>Bring your own key</Trans> and a build-time extractor generates the catalog, so the source English stays in the component and searching the string lands you directly in it -- grep-ability preserved. So the downside noticed in iOS/Flutter is specifically what Lingui''s design exists to remove. Final honest point: this project is not localized yet -- the screenshot shows <h3>Bring your own key</h3> hardcoded directly in JSX, which is why searching it jumped straight to the file in one hop. That one-hop speed IS the pre-i18n baseline; localizing means choosing whether to keep it (inline-message style) or trade it for key indirection.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (63, 'i18n', 'Internationalization -- the engineering of an app so its text and formatting can be swapped per language/region without code changes. (The 18 is the letters between i and n.) Localization (l10n) is the act of supplying a specific language.'),
+  (63, 'message catalog', 'The per-language store of translatable strings, usually a JSON file (en.json, es.json) mapping a key to the translated text. The provider loads the catalog for the active locale.'),
+  (63, 'locale negotiation / fallback', 'How the app picks which language to show -- from navigator.language, a saved setting, or the URL -- and which language to fall back to when a key is missing in the chosen one.'),
+  (63, 'key-based vs message-based i18n', 'Two extraction styles. Key-based: you write an opaque id like t(''byok.heading''); the English lives only in the catalog, so searching the string fails. Message-based/inline-default: you write the real English (<Trans>...</Trans>) and tooling extracts keys at build time, so the string stays searchable in the component.');
+
+-- =====================================================
+-- Brochure sections (derived from each day's entries + vocab)
+-- =====================================================
+
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-04', 1, 'Operating systems', 'A kernel brokers the hardware', 'The kernel is the OS layer that talks to hardware -- managing CPU time, memory, disk, and devices. Every app reaches it through system calls, like requests cleared by a warehouse manager.'),
+('2026-06-04', 2, 'Operating systems', 'A distro bundles everything around Linux', 'A distribution wraps the Linux kernel with a package manager, init system, and default apps. Ubuntu and Fedora both run Linux but make different choices, so they feel different.'),
+('2026-06-04', 3, 'Containers', 'Docker packages an app with its world', 'A container holds an app plus everything it needs to run, built from a Dockerfile recipe. It then runs identically everywhere -- no more "works on my machine".'),
+('2026-06-04', 4, 'Daemons', 'A daemon runs quietly in the background', 'A daemon is a long-running program with no UI doing one job: listening for connections, rotating logs. By convention its name ends in "d" -- sshd, httpd.'),
+('2026-06-04', 5, 'Networking', 'SSH is the secure remote-login standard', 'SSH logs you into a machine over the network and runs commands. The sshd daemon listens on port 22, encrypts the session, and authenticates with keys instead of sending a secret over the wire.'),
+('2026-06-04', 6, 'Distributed systems', 'Service discovery is a phone book for services', 'With hundreds of microservice copies coming and going, a discovery server (like Netflix''s Eureka) keeps a live registry. Services register on startup; others query it to find a healthy address to call.'),
+('2026-06-04', 7, 'Personal systems', 'A task-discovery server watches and suggests', 'A personal daemon that ingests commits, files, and recordings, stores them in structured and vector stores, then re-reads recent activity through an LLM to surface what is worth noticing.');
+
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-06', 1, 'Operations', 'Runbooks automate repeated fixes', 'A runbook encodes what to do when a problem occurs -- from manual doc steps to fully automated responses. With explicit success criteria, they are natural targets for agents.'),
+('2026-06-06', 2, 'OOP', 'A class is a blueprint for objects', 'A class defines fields (data) and methods (behavior); each instance carries its own copy of the fields. The class is the mold; each object is poured from it.'),
+('2026-06-06', 3, 'Web data', 'JSON is the lingua franca for data', 'Just six things: objects, arrays, strings, numbers, booleans, null. It runs APIs, configs, and LLM payloads. No comments, no trailing commas.'),
+('2026-06-06', 4, 'Design vocab', 'Website parts have standard names', 'Header, footer, navbar, sidebar; hero, card, modal, toast. Shared terms let designers and developers point at a region and agree what it is called.'),
+('2026-06-06', 5, 'Modeling', 'An ontology defines what exists', 'An ontology maps the kinds of things in a domain and how they relate, sitting above the schema and code. Handing an LLM an explicit ontology sharply improves consistency.'),
+('2026-06-06', 6, 'Networking', 'Localhost always means this machine', '127.0.0.1 and ::1 are loopback addresses for "this computer". localhost:4747 points at your own machine, so it is not shareable -- everyone''s localhost is their own.'),
+('2026-06-06', 7, 'Networking', 'A port routes traffic to a program', 'A port is a 16-bit number directing network traffic to the right program. 0-1023 are well-known (HTTP 80, SSH 22); only one process binds a given port.'),
+('2026-06-06', 8, 'Development', 'Three ways to share a dev server', 'A tunnel like ngrok exposes a local port via a public URL in seconds; binding to 0.0.0.0 reaches your LAN; for real use, deploy to Vercel, Netlify, or Cloudflare Pages.'),
+('2026-06-06', 9, 'Licensing', 'Permissive licenses dominate open source', 'MIT is the most common -- do anything if you keep the notice. Apache 2.0 adds patent protection; copyleft (GPL) requires derivatives to stay open.');
+
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-07', 1, 'Shell & PATH', 'npm finds executables via PATH', 'Typing a command makes the shell search PATH (a list of directories) for a matching executable and run the first hit. npm prepends node_modules/.bin, which is why "npm run dev" works but bare "vite" may not.'),
+('2026-06-07', 2, 'Networking', 'IPv6 and IPv4 are separate families', '::1 and 127.0.0.1 are different addresses on different families. Modern Node resolves IPv6 first, so a dev server on "localhost" may listen only on [::1], not 127.0.0.1.'),
+('2026-06-07', 3, 'Interfaces', 'en0 is WiFi, lo0 is loopback', 'macOS names interfaces: lo0 (loopback), en0 (WiFi), en1+ (others). ifconfig en0 shows the addresses bound to each; that is how you find your real network IP.'),
+('2026-06-07', 4, 'CLI tools', 'ifconfig configures, ipconfig queries DHCP', 'Unix uses ifconfig to list and configure interfaces; Windows uses ipconfig. macOS has both, but its ipconfig is just a DHCP helper -- ifconfig is the workhorse.'),
+('2026-06-07', 5, 'File system', 'Symlinks shift where relative paths resolve', 'A relative path inside a symlinked file resolves from the file''s real location, not the link''s. Use realpath to find where code actually runs.'),
+('2026-06-07', 6, 'Text', 'Regex is a tiny pattern language', 'Literals match themselves; metacharacters (. * + ? ^ $) do special jobs; [a-z] and \d match classes; ^ and $ anchor to start and end. Most power comes from these basics.'),
+('2026-06-07', 7, 'Node.js', 'process.argv holds CLI arguments', 'argv[0] is node, argv[1] is the script, argv[2+] are your args. The idiom slice(2) drops the first two. Every Node CLI reads this.'),
+('2026-06-07', 8, 'Compatibility', 'Baseline marks safe-to-use features', 'Baseline labels when a web feature shipped across all major browsers. "Widely available" means 30 months stable. Use baseline targets in Browserslist instead of guessing versions.'),
+('2026-06-07', 9, 'Build tools', 'Compile caches skip unchanged work', 'A tool fingerprints the source and compiler version; a cache hit reuses the artifact. First start is cold and slow; the next is warm and fast. Flush with --force when stale.'),
+('2026-06-07', 10, 'JavaScript', 'nanoid makes short unique IDs', 'nanoid produces 21-character URL-safe IDs instead of 36-character UUIDs -- shorter, faster, URL-ready. You likely use it transitively via Vite.'),
+('2026-06-07', 11, 'Tooling', 'update-browserslist-db refreshes browser data', 'Browserslist reads a support snapshot (caniuse-lite) that goes stale. Running npx update-browserslist-db@latest refreshes it in node_modules without touching your lockfile.'),
+('2026-06-07', 12, 'Web', 'A favicon is the tab icon', 'The small icon by the tab title and bookmarks, served from /favicon.ico. Modern sites use an SVG plus apple-touch-icon.png for home-screen shortcuts.'),
+('2026-06-07', 13, 'OO design', 'A singleton allows one instance', 'The pattern hides a constructor and hands back the same instance every time. Fine for a logger or DB pool, but it is hidden global state that complicates testing.'),
+('2026-06-07', 14, 'Architecture', 'Namespaces prevent name collisions', 'Namespaces group names so LibA.Logger and LibB.Logger coexist. In JS, ES modules give this free -- each file is its own scope choosing what to export.'),
+('2026-06-07', 15, 'Quality', 'A linter flags likely bugs', 'Linters like ESLint read code without running it and report probable bugs and risky patterns. Formatters handle whitespace; linters handle logic.'),
+('2026-06-07', 16, 'URLs', 'A slug is the readable path part', '/posts/how-to-make-coffee beats /posts/42: lowercase, hyphenated, URL-safe. Good slugs help SEO and trust; collisions get a counter or short ID.'),
+('2026-06-07', 17, 'DevOps', 'CI/CD automates test and deploy', 'CI runs tests and linters on every push; CD ships when CI passes. Fresh container, known config, reproducible build -- bad code stays out and main stays green.');
+
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-08', 1, 'Unix', 'Pipes compose small programs', 'A pipe (|) feeds one program''s output into the next as input, connecting stdin/stdout/stderr live in memory. The Unix way: chain small text tools instead of one monolith.'),
+('2026-06-08', 2, 'Git', 'git show and HEAD reach commit contents', 'git show HEAD prints a commit''s message and diff; HEAD points at your current commit. Relative refs like HEAD~1 step backward. Pipe the output anywhere.'),
+('2026-06-08', 3, 'Workflow', 'Pipe git output into Claude', 'Piping "git show HEAD" into "claude -p" sends a commit to an LLM to summarize. A heredoc structures multi-line prompts; saved as a shell function it becomes a reusable tool.'),
+('2026-06-08', 4, 'Organization', 'Date-first archives self-sort', 'Naming files category/archive/YYYY/MM/YYYY-MM-DD-slug keeps them chronological by default. You usually recall roughly when something happened, so it stays findable.'),
+('2026-06-08', 5, 'Automation', 'Playwright captures print-quality images', 'Playwright drives a real browser. For print, set deviceScaleFactor to 3-4 (300+ DPI) and use page.pdf() to keep vectors. Slug-and-timestamp filenames stay sortable.'),
+('2026-06-08', 6, 'Workflow', 'Write captures straight to the workbench', 'Point Playwright output at the workbench asset folder, or sync with rsync/chokidar afterward. Wrap it as an npm script for one-command capture-and-deliver.'),
+('2026-06-08', 7, 'Unix', 'File descriptors are stream handles', 'Every process gets fd 0/1/2 (stdin/out/err). An fd is just an integer the kernel maps to a real object; redirection like 2>&1 rewires which fd points where.'),
+('2026-06-08', 8, 'Claude Code', 'Slash commands come in three kinds', 'Built-ins (/clear, /model), skills that load instructions into context, and custom prompt macros you define. The / menu mixes all three.'),
+('2026-06-08', 9, 'Review', 'Adversarial review attacks the work', 'An adversarial reviewer hunts for missing pieces and failure modes instead of supporting the work -- the structural antidote to sycophancy.'),
+('2026-06-08', 10, 'LLM work', 'Sycophancy is agreeing with you wrongly', 'Models tend to agree, fold under pushback, and praise bad plans -- a known RLHF failure. Counter it: ask for disagreement, use a second agent, avoid leading questions.'),
+('2026-06-08', 11, 'Cloudflare', 'Zaraz runs marketing tags at the edge', 'Instead of loading twenty scripts in the visitor''s browser, Zaraz runs them on Cloudflare''s edge. One small request fans out -- better Core Web Vitals and privacy.');
+
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-10', 1, 'Tokens', 'Images are billed by pixel area', 'An image costs about (width x height)/750 tokens -- a screenshot runs ~1,100-1,600, a full-res one up to ~4,800. Worth it for visual things; never screenshot code, paste the text.'),
+('2026-06-10', 2, 'Editor', 'Force VS Code to open Chrome', 'The integrated preview is the "Simple Browser". Set onAutoForward to openBrowser (not openPreview) and workbench.externalBrowser to chrome to get the real browser back.'),
+('2026-06-10', 3, 'i18n', '"Localizable" means swappable text', 'Localizable text is not hardcoded -- it lives in a resource file keyed by an identifier so translators swap languages without touching code. iOS uses Localizable.strings; web uses en.json.'),
+('2026-06-10', 4, 'React', 'TSX is TypeScript plus JSX', 'A .tsx file is typed JavaScript that allows HTML-looking tags. JSX is not HTML -- it compiles to function calls returning element-description objects that React turns into real DOM.'),
+('2026-06-10', 5, 'Tokens', 'PDFs are billed twice per page', 'Each PDF page is rendered as an image AND has its text extracted -- roughly 1,500-3,000 tokens per page. Extract text yourself for prose; send the PDF when layout carries meaning.'),
+('2026-06-10', 6, 'Preprocessing', 'Convert documents to text before sending', 'Libraries like markitdown, Docling, and marker turn PDFs and Office files into Markdown -- token-dense and structure-preserving. Convert prose pages; pass genuinely visual pages as images.'),
+('2026-06-10', 7, 'Quality', 'QA prevents, testing detects', 'A tester executes tests and reports defects; QA owns quality across the whole process -- preventing defects, not just finding them. SDET is the engineer who writes the automation.'),
+('2026-06-10', 8, 'Probability', 'Real randomness looks clustered', 'True randomness is unpredictable and produces streaks; humans read streaks as patterns, so it feels rigged. Spotify made shuffle less random to feel more random.'),
+('2026-06-10', 9, 'Probability', 'The infinite monkey theorem', 'Given infinite random trials, any nonzero-probability outcome happens almost surely -- even Shakespeare. It is true only because infinity dwarfs every finite number.'),
+('2026-06-10', 10, 'Browser APIs', 'The browser speaks aloud for free', 'speechSynthesis.speak() does text-to-speech on-device: no server, no files, works offline, costs nothing -- enough for a "read aloud" button in a few lines.'),
+('2026-06-10', 11, 'Claude', 'find-skills is the librarian for skills', 'Ask "how do I do X" and find-skills searches the ecosystem of installable skills and helps you install a match -- so you need not already know a skill''s name.'),
+('2026-06-10', 12, 'Design', '/impeccable is a senior design reviewer', 'A frontend design-quality skill for designing, critiquing, polishing, or auditing a UI -- hierarchy, type, spacing, color, accessibility, motion, copy, and anti-patterns.'),
+('2026-06-10', 13, 'Debugging', 'Node DevTools dials into your process', 'Node opens an inspector WebSocket (port 9229); Chrome attaches over the Chrome DevTools Protocol and streams your console.logs out. Chrome dialed in -- your server is not pushing out.');
+
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-13', 1, 'i18n', 'Localizing means keys, not literals', 'A provider holds the active locale and a per-language message catalog; the component renders t(key) instead of the literal, falling back when a key is missing.'),
+('2026-06-13', 2, 'i18n', 'The searchability tax is shallower on web', 'Searching a string lands you in a catalog, not the component. Web is usually two hops, not the three or four of iOS/Flutter, which add a generated constant layer.'),
+('2026-06-13', 3, 'i18n', 'Searchability is a design choice', 'Key-based i18n hides the English in the catalog; message-based (Lingui''s <Trans>, defaultMessage) keeps it in the component and extracts keys at build time -- grep-ability preserved.');
+
+-- 2026-06-13 — additional entries (business/policy + AI engineering)
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(64, '2026-06-13', 2, 'What is the SBA, and what is an SBA loan?',
+'The SBA (Small Business Administration) is a US federal agency that supports small businesses. It rarely lends directly; instead it GUARANTEES a portion of loans that ordinary banks and lenders make, which lowers the lender''s risk so a small business can borrow on better terms than it could alone. An SBA loan is therefore a bank loan with a federal guarantee behind it -- still debt you repay, not a grant. Main programs: 7(a) (general-purpose working capital, up to ~$5M), 504 (real estate and major equipment, arranged through a Certified Development Company), microloans (up to ~$50k), and disaster loans (the one case the SBA lends directly). The tradeoff is lower down payments and longer repayment terms in exchange for heavy paperwork and usually a personal guarantee. Exact caps and rates change, so verify current figures before relying on them.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (64, 'SBA', 'US Small Business Administration -- a federal agency that backs small businesses, mostly by guaranteeing private loans rather than lending itself.'),
+  (64, 'loan guarantee', 'A promise by a third party (here the government) to cover part of a loan if the borrower defaults, which makes lenders willing to offer better terms.'),
+  (64, '7(a) loan', 'The SBA''s flagship general-purpose loan program -- working capital, expansion, refinancing -- guaranteed up to a cap (around $5M).'),
+  (64, 'personal guarantee', 'A pledge that you personally repay a business loan if the business cannot -- common on SBA and small-business lending.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(65, '2026-06-13', 3, 'What is a government contract?',
+'A legally binding agreement in which a government body (federal, state, or local) buys goods or services from a private vendor. Federal contracts run on the FAR (Federal Acquisition Regulation); vendors register and find opportunities on SAM.gov. A meaningful share of federal spending is set aside for small businesses, with extra lanes for specific categories (8(a), HUBZone, women-owned, veteran-owned, service-disabled-veteran-owned). The appeal is large, stable, predictable revenue; the cost is slow timelines and heavy compliance. A contract -- the government buying from you -- is distinct from a grant, where the government funds you to do something; both exist but are different instruments.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (65, 'government contract', 'A binding deal where a government buys goods or services from a private vendor, governed by procurement rules.'),
+  (65, 'FAR', 'Federal Acquisition Regulation -- the rulebook governing how the US federal government buys things.'),
+  (65, 'SAM.gov', 'The US System for Award Management: where vendors register and federal contract opportunities are posted.'),
+  (65, 'set-aside', 'A portion of contracts reserved for a category of business (small, veteran-owned, HUBZone, etc.) so they are not competing against everyone.'),
+  (65, 'contract vs grant', 'A contract buys a deliverable for the government''s own use; a grant funds the recipient to pursue a public purpose. Different rules, different money.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(66, '2026-06-13', 4, 'How often do laws change that affect how much money a farmer, trucker, processor, researcher, or developer might be "owed"?',
+'Constantly, at several different cadences. Statutes (laws passed by legislatures) move slower, but the big agricultural one -- the Farm Bill -- is reauthorized roughly every five years and resets subsidies, crop insurance, and conservation payments en masse. On top of that, appropriations and many tax provisions change annually, and most grant programs run yearly funding rounds. The fastest layer is regulations: federal agencies (USDA, DOT/FMCSA for trucking, EPA, FDA for food processing) publish proposed and final rules in the Federal Register essentially every business day -- thousands a year. So something material changes every year and small eligibility or rule changes happen continuously. Staying current is a genuine full-time information problem, which is exactly the gap an aggregation tool could fill. (Verify the current Farm Bill status -- reauthorizations are often delayed or extended past their nominal expiry.)');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (66, 'Farm Bill', 'A roughly-every-five-years US omnibus law that sets agricultural subsidies, crop insurance, conservation programs, and nutrition assistance.'),
+  (66, 'Federal Register', 'The daily US government publication where agencies post proposed and final regulations -- the firehose of rule changes.'),
+  (66, 'statute vs regulation', 'A statute is a law passed by a legislature; a regulation is an agency''s detailed rule implementing it. Regulations change far more often than statutes.'),
+  (66, 'appropriations', 'The annual laws that actually fund government programs -- a yearly lever that can change how much money flows even when the underlying statute is unchanged.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(67, '2026-06-13', 5, 'Are there incentives for hiring or training employees -- subsidized salaries -- through SBA loans or other laws?',
+'Not through SBA loans -- those are capital you repay, not a hiring subsidy (the proceeds can cover payroll, but it is still debt). The actual wage and training incentives live in other programs. Tax credits: the Work Opportunity Tax Credit (WOTC) rewards hiring from target groups (veterans, SNAP recipients, and others), commonly a few thousand dollars per qualifying hire. Workforce programs: WIOA-funded On-the-Job Training often reimburses around half of a new hire''s wages during a training period, arranged through local Workforce or American Job Centers. Registered Apprenticeships (US Department of Labor) add funding and frequently state tax credits. Many states run their own hiring or training grants and enterprise-zone credits. Amounts and eligibility change, so confirm current rules before counting on them.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (67, 'WOTC', 'Work Opportunity Tax Credit -- a US federal tax credit for employers who hire from specified target groups.'),
+  (67, 'WIOA / on-the-job training', 'Workforce Innovation and Opportunity Act funding that can reimburse part of a new hire''s wages while they are trained, via local job centers.'),
+  (67, 'registered apprenticeship', 'A formal DOL-recognized earn-while-you-learn program that can carry funding and state tax credits for the employer.'),
+  (67, 'subsidy vs loan', 'A subsidy is money you keep (credit, reimbursement, grant); a loan is money you repay. SBA gives cheaper loans, not hiring subsidies.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(68, '2026-06-13', 6, 'What is a one-shot when it comes to AI engineering?',
+'"One-shot" describes how many worked examples you put in the prompt before asking the model to do the task. Zero-shot: no examples, just the instruction. One-shot: exactly one example demonstrating the input-to-output pattern. Few-shot: a handful. Showing examples steers the format and behavior without retraining the model -- this is called in-context learning, and it costs only the tokens of the examples. Separately and more loosely, people say a model "one-shotted" a task to mean it got it right on the FIRST attempt with no retries or back-and-forth; that is a related but informal usage. Do not confuse one-shot prompting with fine-tuning: prompting teaches by example inside a single request and changes nothing permanent, while fine-tuning actually updates the model''s weights.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (68, 'zero / one / few-shot', 'How many worked examples you give a model in the prompt: none, one, or a handful. More examples generally steer behavior more strongly.'),
+  (68, 'in-context learning', 'A model adapting its behavior from examples in the prompt alone, with no change to its weights -- the mechanism behind few-shot prompting.'),
+  (68, 'exemplar', 'A single worked input-output example included to show the model the pattern you want.'),
+  (68, 'fine-tuning (contrast)', 'Actually updating a model''s weights on training data -- permanent, unlike prompting. One-shot prompting is not fine-tuning.');
+
+-- 2026-06-13 brochure sections for the new entries
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-13', 4, 'Funding', 'The SBA backs loans, rarely makes them', 'The SBA guarantees a slice of bank loans so small businesses borrow on better terms. An SBA loan is still debt you repay -- 7(a) for working capital, 504 for property, microloans for small needs.'),
+('2026-06-13', 5, 'Procurement', 'A government contract is the government buying from you', 'Federal deals run on the FAR, posted on SAM.gov, with shares set aside for small and category-owned businesses. Stable revenue, heavy compliance. A contract differs from a grant.'),
+('2026-06-13', 6, 'Policy', 'The money rules change at three speeds', 'The Farm Bill resets ag subsidies about every five years; appropriations and grant rounds shift yearly; agency regulations change daily in the Federal Register. Staying current is a full-time job.'),
+('2026-06-13', 7, 'Incentives', 'Hiring subsidies live outside SBA loans', 'SBA loans are capital, not wage help. Real incentives: the WOTC tax credit per qualifying hire, WIOA on-the-job training reimbursing about half of wages, and apprenticeship funding.'),
+('2026-06-13', 8, 'AI engineering', 'One-shot means one example in the prompt', 'Zero, one, or few-shot is how many worked examples you show before the task -- in-context learning that steers output without retraining. Loosely, "one-shotted" also means nailed it first try.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(69, '2026-06-13', 7, 'What makes a good brochure?',
+'A good brochure does one job well and respects that the reader skims, not reads. Core principles: (1) One clear purpose -- a single message or call to action the whole thing serves. (2) Strong hierarchy -- an obvious entry point (the cover or masthead), then scannable headlines so the eye knows where to start and how to move. (3) Atomic panels -- each panel stands on its own with a short label and a one-or-two-sentence point; no panel depends on having read another. (4) Brevity -- headlines over paragraphs, because brochures are glanced at, not studied. (5) Visual rhythm -- a consistent grid, generous whitespace, and a restrained palette with a single accent, so it reads as calm and intentional. (6) A throughline -- panels grouped or sequenced by theme rather than dumped in arbitrary order, which gives the piece a narrative. (7) A payoff -- it ends on a takeaway or a next step instead of trailing off. For a physical fold, the cover earns the open, the inside delivers, and the back carries the call to action. Our day-brochure already has the hierarchy, brevity, grid, and restrained palette; what would make it genuinely good next is grouping the panels by theme and giving the back side a closing takeaway.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (69, 'visual hierarchy', 'Arranging size, weight, color, and placement so the eye is guided to the most important thing first and through the rest in a deliberate order.'),
+  (69, 'atomicity (one idea per panel)', 'Designing each unit of a layout to carry exactly one self-contained idea that reads on its own, without depending on its neighbors.'),
+  (69, 'scannability', 'Designing for skim-reading -- short headlines, clear grouping, whitespace -- so a glance conveys the gist before any close reading.'),
+  (69, 'call to action', 'The single next step you want the reader to take; a good brochure is built to lead toward it rather than just informing.');
+
+INSERT INTO sections (day_date, position, kicker, label, body) VALUES
+('2026-06-13', 9, 'Design', 'A good brochure is skimmed, not read', 'One clear purpose, strong hierarchy, atomic panels (one idea each), brevity, a consistent grid with whitespace, a thematic throughline, and a closing call to action. The cover earns the open; the back carries the ask.');

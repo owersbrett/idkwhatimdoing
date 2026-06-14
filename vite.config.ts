@@ -60,7 +60,13 @@ function archive(opts: { dbPath: string }): Plugin {
           return { ...e, vocab };
         });
 
-        return { ...d, entries: entriesWithVocab };
+        const sections = db
+          .prepare(
+            'SELECT position, kicker, label, body FROM sections WHERE day_date = ? ORDER BY position'
+          )
+          .all(d.date) as Array<{ position: number; kicker: string | null; label: string; body: string }>;
+
+        return { ...d, entries: entriesWithVocab, sections };
       });
     } finally {
       db.close();

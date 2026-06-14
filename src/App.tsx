@@ -4,6 +4,7 @@ import DebugPanel from './DebugPanel';
 import Legal, { openLegal } from './Legal';
 import ManualDay from './manual';
 import QADay from './qa';
+import Brochure from './brochure';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -20,6 +21,7 @@ function isEntryAnchor(hash: string): boolean {
 
 export default function App() {
   const [date, setDate] = useState<string>(initialDate);
+  const [view, setView] = useState<'read' | 'brochure'>('read');
 
   useEffect(() => {
     const onHash = () => {
@@ -31,10 +33,17 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  useReveal(date);
+  // A new day always starts in the reader.
+  useEffect(() => setView('read'), [date]);
+
+  // Re-run the reveal observer when the day OR the view changes — otherwise the
+  // freshly mounted nodes after a toggle keep their opacity:0 and never appear.
+  useReveal(`${date}:${view}`);
 
   const day = archive.find((d) => d.date === date) ?? archive[0];
   if (!day) return null;
+
+  const hasBrochure = day.kind !== 'manual' && day.sections.length > 0;
 
   return (
     <>
@@ -42,12 +51,50 @@ export default function App() {
       <main className="page">
         <AppHeader days={archive} currentDate={day.date} />
         <div key={day.date} className="day">
-          {day.kind === 'manual' ? <ManualDay /> : <QADay day={day} />}
+          {day.kind === 'manual' ? (
+            <ManualDay />
+          ) : (
+            <>
+              {hasBrochure && <ViewToggle view={view} onChange={setView} />}
+              {hasBrochure && view === 'brochure' ? <Brochure day={day} /> : <QADay day={day} />}
+            </>
+          )}
         </div>
         <Colophon day={day} />
       </main>
       <Legal />
     </>
+  );
+}
+
+function ViewToggle({
+  view,
+  onChange,
+}: {
+  view: 'read' | 'brochure';
+  onChange: (v: 'read' | 'brochure') => void;
+}) {
+  return (
+    <div className="viewtoggle reveal" role="tablist" aria-label="View mode">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={view === 'read'}
+        className={`viewtoggle__btn${view === 'read' ? ' is-on' : ''}`}
+        onClick={() => onChange('read')}
+      >
+        Reader
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={view === 'brochure'}
+        className={`viewtoggle__btn${view === 'brochure' ? ' is-on' : ''}`}
+        onClick={() => onChange('brochure')}
+      >
+        Brochure
+      </button>
+    </div>
   );
 }
 

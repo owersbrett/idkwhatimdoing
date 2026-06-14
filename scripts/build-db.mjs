@@ -21,7 +21,8 @@ try {
   const dayCount = db.prepare('SELECT COUNT(*) AS n FROM days').get().n;
   const entryCount = db.prepare('SELECT COUNT(*) AS n FROM entries').get().n;
   const vocabCount = db.prepare('SELECT COUNT(*) AS n FROM vocab').get().n;
-  console.log(`archive.db built: ${dayCount} days, ${entryCount} entries, ${vocabCount} vocab terms.`);
+  const sectionCount = db.prepare('SELECT COUNT(*) AS n FROM sections').get().n;
+  console.log(`archive.db built: ${dayCount} days, ${entryCount} entries, ${vocabCount} vocab terms, ${sectionCount} brochure sections.`);
 } catch (err) {
   console.error('seed.sql failed:', err.message);
   process.exit(1);

@@ -20,11 +20,18 @@ declare module 'virtual:archive' {
     answer: string;
     vocab: Vocab[];
   };
+  export type Section = {
+    position: number;
+    kicker: string | null;
+    label: string;
+    body: string;
+  };
   export type Day = {
     date: string;
     kind: 'manual' | 'qa';
     title: string | null;
     entries: Entry[];
+    sections: Section[];
   };
   export const days: Day[];
   const _default: Day[];
