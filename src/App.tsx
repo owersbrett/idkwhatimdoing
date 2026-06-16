@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { days as archive, type Day } from 'virtual:archive';
+import { reportLessonState } from './lesson-bridge';
 import DebugPanel from './DebugPanel';
 import Legal, { openLegal } from './Legal';
 import ManualDay from './manual';
@@ -35,6 +36,21 @@ export default function App() {
 
   // A new day always starts in the reader.
   useEffect(() => setView('read'), [date]);
+
+  // Broadcast what's on screen to a parent embedder (potatocore CAM 02).
+  useEffect(() => {
+    const d = archive.find((x) => x.date === date) ?? archive[0];
+    if (!d) return;
+    reportLessonState({
+      date: d.date,
+      view,
+      dayIndex: archive.findIndex((x) => x.date === d.date),
+      dayCount: archive.length,
+      entryCount: d.entries.length,
+      title: d.title,
+      kind: d.kind,
+    });
+  }, [date, view]);
 
   // Re-run the reveal observer when the day OR the view changes — otherwise the
   // freshly mounted nodes after a toggle keep their opacity:0 and never appear.

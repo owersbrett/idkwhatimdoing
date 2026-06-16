@@ -3312,3 +3312,24 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'Greedy sampling; it makes output deterministic',
  1,
  'Narrowing a general model to a domain is specialization, which boosts the niche but can erode previously learned general abilities.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(91, '2026-06-15', 22, 'How do I make a good Claude /loop?',
+'A /loop runs a task over and over on a schedule instead of once -- it is for RECURRING work (polling, babysitting a process, repeating a check), not one-shot tasks. Two modes. Fixed interval: /loop 5m /babysit-prs runs the prompt or slash command every 5 minutes, like a metronome you set the beat for. Dynamic (self-paced): /loop watch the deploy and tell me when it is live has no interval, so Claude chooses the delay each tick -- short when something is about to change, long when idle. Six things make a loop good. (1) One clear job per tick: each iteration is a single, well-scoped action ("check open PRs and reply to new review comments"), not a giant task ("fix my whole repo"). (2) A real exit condition: a good loop knows when to STOP, either baked into the prompt ("...until CI goes green, then stop") or by ending naturally; a loop with no stopping rule runs forever and burns money. (3) Watch state that actually changes: check a real moving thing -- a deploy status, a PR queue, a CI run -- and act only on the change; looping on a clock with nothing to observe is wasted motion. (4) Make each tick idempotent (running it twice has the same effect as once): if a tick ACTS -- comments, commits, sends -- it must first check "did I already do this?", or the loop spams the same action repeatedly. (5) Match the cadence to the thing: poll a 10-minute CI run roughly every several minutes, not every 30 seconds. Two rough bands -- under ~5 minutes for actively watching something about to change (this also keeps Claude''s context cache warm and cheap), ~20-30 minutes for idle "just checking" ticks. Never poll faster than the watched thing actually moves. (6) Do not poll for work Claude already tracks: a background job started inside Claude Code notifies you when it finishes, so looping to check it is wasted; loops earn their keep on EXTERNAL state Claude cannot otherwise see (a GitHub deploy, a remote queue, a server you curl). Good: /loop 10m /babysit-prs (recurring, observable, safe to repeat); /loop poll the staging deploy every 2m and ping me when health checks pass (clear exit, right cadence, real external state). Bad: /loop fix all the bugs (one-off, no exit, not idempotent); /loop check the thing every 10s (faster than anything changes, burns tokens). Rule of thumb: a good loop is "keep watching X; when Y changes, do Z; stop when W." If you cannot fill in all four -- what to watch, the change, the action, the stop -- it probably should not be a loop yet.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (91, 'polling', 'Repeatedly checking the current state of something (a deploy, a queue, a file) on an interval to notice when it changes -- what most loops do.'),
+  (91, 'fixed-interval vs dynamic loop', 'Fixed-interval runs every N minutes (a metronome you set); dynamic has no interval and lets Claude choose each delay based on what it is waiting for.'),
+  (91, 'exit condition', 'The rule that ends a loop (e.g. "stop once CI passes"). Without one, a loop runs forever and keeps spending tokens.'),
+  (91, 'idempotent', 'An operation where doing it twice has the same effect as doing it once. Loop ticks that act must be idempotent or they repeat the same action every cycle.'),
+  (91, 'cadence', 'How often the loop runs. A good cadence matches how fast the watched thing actually changes -- not faster.'),
+  (91, 'context cache', 'Claude''s reuse of recent conversation context to run cheaper/faster. Loop ticks under ~5 minutes apart keep it warm; longer gaps pay to rebuild it.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(91, 'A loop tick posts a comment on a pull request each time it runs. What property must it have so it does not post the same comment over and over?',
+ 'It must run on a fixed interval rather than dynamically',
+ 'It must be idempotent -- check whether it already acted before acting again',
+ 'It must use the fastest possible cadence',
+ 'It must avoid ever having an exit condition',
+ 1,
+ 'A tick that acts (comments, commits, sends) must be idempotent: it checks "did I already do this?" first, so repeating the loop does not repeat the action.');
