@@ -13,12 +13,19 @@ interface ImportMeta {
 
 declare module 'virtual:archive' {
   export type Vocab = { term: string; def: string };
+  export type Quiz = {
+    prompt: string;
+    options: string[];
+    answer: number;
+    explanation: string;
+  };
   export type Entry = {
     id: number;
     position: number;
     question: string;
     answer: string;
     vocab: Vocab[];
+    quiz: Quiz | null;
   };
   export type Section = {
     position: number;

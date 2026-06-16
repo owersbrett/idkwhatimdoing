@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Day, Entry, Vocab } from 'virtual:archive';
 import { Divider } from './App';
 import { useApiKey } from './apikey';
@@ -6,10 +6,48 @@ import VocabExample from './VocabExample';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
+// Session-only eval score. Answers are held in React state and never persisted:
+// reloading the page wipes the board. Keyed by entry id so each question counts
+// at most once, no matter how many times it re-renders.
+type ScoreContextValue = {
+  results: Map<number, boolean>;
+  record: (entryId: number, correct: boolean) => void;
+};
+
+const ScoreContext = createContext<ScoreContextValue | null>(null);
+
+function useScore(): ScoreContextValue {
+  const ctx = useContext(ScoreContext);
+  if (!ctx) throw new Error('useScore must be used inside a ScoreProvider');
+  return ctx;
+}
+
 export default function QADay({ day }: { day: Day }) {
+  const [results, setResults] = useState<Map<number, boolean>>(() => new Map());
+
+  // A fresh day starts a fresh scorecard.
+  useEffect(() => setResults(new Map()), [day.date]);
+
+  const value = useMemo<ScoreContextValue>(
+    () => ({
+      results,
+      record: (entryId, correct) =>
+        setResults((prev) => {
+          if (prev.has(entryId)) return prev;
+          const next = new Map(prev);
+          next.set(entryId, correct);
+          return next;
+        }),
+    }),
+    [results]
+  );
+
+  const quizCount = day.entries.filter((e) => e.quiz).length;
+
   return (
-    <>
+    <ScoreContext.Provider value={value}>
       <DayHero day={day} />
+      {quizCount > 0 && <ScoreBoard total={quizCount} />}
       <JumpIndex day={day} />
       <section className="qa" aria-label="Entries">
         {day.entries.map((entry, i) => (
@@ -22,7 +60,33 @@ export default function QADay({ day }: { day: Day }) {
         ))}
       </section>
       <DayLexicon day={day} />
-    </>
+    </ScoreContext.Provider>
+  );
+}
+
+function ScoreBoard({ total }: { total: number }) {
+  const { results } = useScore();
+  const answered = results.size;
+  const correct = [...results.values()].filter(Boolean).length;
+  const pct = answered === 0 ? 0 : Math.round((correct / answered) * 100);
+
+  return (
+    <aside className="score reveal" aria-label="Eval score for this page" aria-live="polite">
+      <span className="score__label">Eval</span>
+      <span className="score__tally">
+        <strong className="score__correct">{correct}</strong>
+        <span className="score__sep">/</span>
+        <span className="score__answered">{answered}</span>
+        <span className="score__of">answered</span>
+      </span>
+      <span className="score__rest">
+        {answered === total
+          ? answered === 0
+            ? `${total} to try`
+            : `all ${total} done · ${pct}%`
+          : `${total - answered} left`}
+      </span>
+    </aside>
   );
 }
 
@@ -138,11 +202,72 @@ function EntryBlock({
               ))}
             </dl>
           )}
+
+          {entry.quiz && <EntryQuiz entryId={entry.id} quiz={entry.quiz} />}
         </div>
       </div>
 
       <Divider />
     </article>
+  );
+}
+
+function EntryQuiz({ entryId, quiz }: { entryId: number; quiz: NonNullable<Entry['quiz']> }) {
+  const { record } = useScore();
+  const [picked, setPicked] = useState<number | null>(null);
+  const answered = picked !== null;
+  const wasCorrect = picked === quiz.answer;
+
+  function choose(i: number) {
+    if (answered) return;
+    setPicked(i);
+    record(entryId, i === quiz.answer);
+  }
+
+  const letters = ['A', 'B', 'C', 'D'];
+
+  return (
+    <section className="quiz reveal" aria-label="Check yourself">
+      <div className="quiz__head">
+        <span className="chapter__kicker">Check yourself</span>
+        {answered && (
+          <span className={`quiz__verdict quiz__verdict--${wasCorrect ? 'right' : 'wrong'}`}>
+            {wasCorrect ? 'Correct' : 'Not quite'}
+          </span>
+        )}
+      </div>
+      <p className="quiz__prompt">{quiz.prompt}</p>
+      <ul className="quiz__options" role="list">
+        {quiz.options.map((opt, i) => {
+          const isAnswer = i === quiz.answer;
+          const isPicked = i === picked;
+          const state = !answered
+            ? ''
+            : isAnswer
+              ? ' is-correct'
+              : isPicked
+                ? ' is-wrong'
+                : ' is-muted';
+          return (
+            <li key={i}>
+              <button
+                type="button"
+                className={`quiz__option${state}`}
+                onClick={() => choose(i)}
+                disabled={answered}
+                aria-pressed={isPicked}
+              >
+                <span className="quiz__letter" aria-hidden>
+                  {letters[i]}
+                </span>
+                <span className="quiz__opttext">{opt}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {answered && <p className="quiz__explain">{quiz.explanation}</p>}
+    </section>
   );
 }
 

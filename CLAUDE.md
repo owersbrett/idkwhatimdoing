@@ -46,12 +46,13 @@ The directory **is** the database. No external DB, no service. Files on disk are
 - **Web stack.** Vite + React 19, served via Cloudflare (wrangler). `npm run dev` on port 4747.
 - **Record format.** SQLite. **`seed.sql` is the source of truth** — day rows plus entries/vocab with explicit ids. `archive.db` is a build artifact: `scripts/build-db.mjs` deletes and rebuilds it from `seed.sql` on every `npm run dev` / `npm run build`. **Never write entries to `archive.db` directly — they will be silently wiped on the next rebuild.** Append INSERTs to `seed.sql` (matching its existing style), then run `node scripts/build-db.mjs`. This was learned the hard way on 2026-06-10.
 - **Capture mechanism.** Manual: when Brett asks a substantive question, Claude appends the entry to `seed.sql` as part of answering, then rebuilds the db.
+- **Worksheet generation — pre-generated and stored** (decided 2026-06-15). Every entry carries exactly one multiple-choice question, authored by Claude and stored in the `quizzes` table in `seed.sql` (`entry_id`, `prompt`, `opt_a`..`opt_d`, `answer` as a 0-based index, `explanation`). The `virtual:archive` Vite plugin joins it onto each entry as `entry.quiz`. The reader renders an inline "Check yourself" card per entry plus a per-page "Eval" scoreboard. **The score is session-only React state — answers are never persisted (no localStorage, no DB writes); reloading resets the board.** When logging a new entry, also append its quiz row, then rebuild.
 
 ### What is intentionally undecided
 
 These are open and should not be invented by future sessions without a cyummu:
 
-- **Worksheet generation.** Inline at view time, or pre-generated and stored — TBD.
+- _(nothing open right now)_
 
 When any of these get decided, update this section.
 
@@ -73,6 +74,7 @@ Don't pre-build structure for fundamentals that haven't been chosen yet.
 - **Cyummu before code.** Always, unless the request is trivially unambiguous.
 - **Log questions to today's page.** When Brett asks a substantive question (not a quick clarification, not a meta instruction), record it on today's archive page as part of answering. Use today's date as shown in context. If the storage format hasn't been decided yet, propose one and confirm via cyummu before inventing files.
 - **Surface vocabulary.** When an answer leans on a term that a self-taught dev might not have, name it explicitly and add it to the day's concept list. The lexicon is a deliverable, not a side effect.
+- **Ship a quiz with every entry.** Each logged entry also gets one multiple-choice question appended to the `quizzes` table in `seed.sql` (test the core concept, four options, plausible distractors, a one-line explanation). Rebuild the db after. See "What is decided".
 - **Teach by example.** Anything written here may end up on camera. Favor clarity over cleverness. Real code over toy code.
 - **No filler.** No throat-clearing comments, no "this is a placeholder" scaffolding, no preemptive abstractions. The audience is learning to spot exactly that kind of noise.
 - **Frame the audience.** When explaining something, assume a smart self-taught dev who has shipped real software but has gaps. Don't condescend; don't assume CS vocabulary either.

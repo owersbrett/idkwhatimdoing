@@ -53,11 +53,21 @@ function archive(opts: { dbPath: string }): Plugin {
           )
           .all(d.date) as Array<{ id: number; position: number; question: string; answer: string }>;
 
+        const quizStmt = db.prepare(
+          'SELECT prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation FROM quizzes WHERE entry_id = ?'
+        );
+
         const entriesWithVocab = entries.map((e) => {
           const vocab = db
             .prepare('SELECT term, def FROM vocab WHERE entry_id = ? ORDER BY id')
             .all(e.id) as Array<{ term: string; def: string }>;
-          return { ...e, vocab };
+          const q = quizStmt.get(e.id) as
+            | { prompt: string; opt_a: string; opt_b: string; opt_c: string; opt_d: string; answer: number; explanation: string }
+            | undefined;
+          const quiz = q
+            ? { prompt: q.prompt, options: [q.opt_a, q.opt_b, q.opt_c, q.opt_d], answer: q.answer, explanation: q.explanation }
+            : null;
+          return { ...e, vocab, quiz };
         });
 
         const sections = db
