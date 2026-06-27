@@ -3333,3 +3333,440 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'It must avoid ever having an exit condition',
  1,
  'A tick that acts (comments, commits, sends) must be idempotent: it checks "did I already do this?" first, so repeating the loop does not repeat the action.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-06-23', 'qa', 'KPIs -- objectives, tasks, and potato examples');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(92, '2026-06-23', 1, 'What is a KPI? How does it relate to a project / objective?',
+'KPI stands for Key Performance Indicator: a single measurable number that tells you whether you are moving toward a goal. The word "key" is load-bearing -- it is a metric you have chosen to treat as important, not just any number you happen to collect. Think of it as a gauge on a dashboard: it does not steer the car, it just tells you, at a glance, whether you are headed the right way and how fast.
+
+It sits in a hierarchy, top to bottom:
+- OBJECTIVE -- the destination, usually qualitative and aspirational ("grow the Potatuhs audience", "make the storefront feel premium"). You cannot measure an objective directly; it is a direction, not a number.
+- KPI -- the measurable proxy that stands in for progress toward that objective ("weekly YouTube watch-time hours", "checkout conversion rate"). It turns a fuzzy goal into something you can read off a chart.
+- TARGET -- the KPI plus a specific number and deadline ("watch-time from 200 to 500 hours/week by Sept 1"). A KPI with no target is just a thermometer with no fever line drawn on it.
+- TASKS / PROJECTS -- the actual work you do, which you HOPE moves the KPI ("publish two videos a week", "redesign the thumbnail style").
+
+A project is a bounded chunk of work with a start and an end; an objective is the why behind it; the KPI is how you know the project is actually serving the objective rather than just keeping you busy. This is exactly the OKR framework (Objectives and Key Results): the Objective is the qualitative destination, the Key Results are the KPIs with targets attached. The relationship to remember: objectives say where you are going, KPIs tell you if you are getting there, and tasks are the only thing you can actually do. You never "do" a KPI directly -- you do tasks and watch the KPI to see if they worked.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(93, '2026-06-23', 2, 'What makes a good KPI?',
+'A good KPI survives a handful of tests. The classic checklist is SMART -- Specific, Measurable, Achievable, Relevant, Time-bound -- but the ones that actually bite for a builder are these:
+
+1. TIED TO AN OBJECTIVE THAT MATTERS. The KPI must be a faithful proxy for the real goal, not a number that is merely easy to collect. This is the vanity-metric trap: "total registered users ever" or "page views" look great and only ever go up, but they do not tell you if the business is healthy. An ACTIONABLE metric ("weekly active users", "paid conversion rate") ties to a real decision; a VANITY metric just flatters you.
+
+2. INFLUENCEABLE. You must be able to move it with your own actions. "Number of sunny days" might correlate with ice-cream sales but it is a terrible KPI because you cannot do anything about it. A good KPI responds when you pull a lever you actually control.
+
+3. CLEARLY DEFINED AND HARD TO GAME. Everyone should compute it the same way ("active = opened the app in the last 7 days", not just "active"). And beware Goodhart''s Law: "when a measure becomes a target, it ceases to be a good measure." If you reward support agents on tickets-closed-per-hour, they will close tickets fast without solving anything. A good KPI is one you cannot juice without also delivering the real value.
+
+4. HAS A TARGET AND A TIMEFRAME. A bare number floating in space means nothing. "Conversion rate" is a metric; "lift conversion from 2% to 3.5% by end of Q3" is a KPI with a target -- now you can succeed or fail at it.
+
+5. LEADING WHERE POSSIBLE, NOT ONLY LAGGING. A LAGGING indicator measures the outcome after the fact (revenue, churn) -- true but too late to react to. A LEADING indicator moves earlier and predicts the lagging one (trial sign-ups this week predict revenue next month; videos published predicts watch-time). Good dashboards pair a lagging KPI you care about with one or two leading KPIs you can act on now.
+
+6. FEW. If everything is a KPI, nothing is. Pick the two or three numbers that, if they moved, would mean the objective is genuinely being met. A wall of 40 metrics is a report, not a focus.
+
+The smell test: a good KPI is one where, if it goes up, you are genuinely happy, and if it goes down, you know you have a real problem and roughly what to look at.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(94, '2026-06-23', 3, 'How does one determine which tasks to do to accomplish a KPI?',
+'You work BACKWARDS from the number, because you can never act on the KPI directly -- you act on its inputs. The method:
+
+1. DECOMPOSE THE KPI INTO ITS DRIVERS (a "driver tree" or "metric tree"). Break the top number into the smaller numbers that mathematically produce it. Revenue = visitors x conversion rate x average order value. Watch-time = videos published x views per video x average view duration. Now instead of one vague goal you have three or four concrete levers, and you can see which one is weakest.
+
+2. SEPARATE INPUTS FROM OUTPUTS. The KPI is usually a LAGGING output you do not directly control. Underneath it are INPUT metrics you DO control -- how many videos you ship, how many emails you send, how fast the page loads. Tasks attach to inputs. "Increase revenue" is not a task; "cut checkout from 4 steps to 2" is, and it pulls the conversion-rate lever in the tree.
+
+3. FIND THE HIGHEST-LEVERAGE LEVER. Look at the driver tree and ask where a realistic change produces the biggest move in the top number. If conversion is already 8% but average order value is rock bottom, bundling products beats squeezing conversion further. Attack the weakest or most movable link, not the one that is most fun to work on.
+
+4. BRAINSTORM TASKS PER LEVER, THEN PRIORITIZE. For the chosen lever, list candidate actions, then rank them by expected impact against effort. Lightweight scoring frameworks make this explicit: ICE (Impact x Confidence x Ease) or RICE (Reach x Impact x Confidence / Effort). The point is not the exact math -- it is forcing yourself to admit that a high-effort, low-confidence idea should lose to a cheap, sure one.
+
+5. TREAT EACH TASK AS A HYPOTHESIS AND MEASURE. You do not actually KNOW a task will move the metric -- you believe it will. So frame it as "if we do X, the input metric Y should rise, which should lift the KPI", ship it, and watch. If the metric moves, do more of that; if it does not, you learned cheaply and you stop. This is the build-measure-learn loop.
+
+The mental shift for a builder: stop asking "what should I build?" and start asking "which number am I trying to move, what feeds that number, and what is the cheapest action that moves the feeder?" Tasks chosen this way are accountable -- each one points at a lever, and the lever points at the KPI. Tasks chosen by vibes are just motion.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(95, '2026-06-23', 4, 'What are some examples of KPIs for potatofolk?',
+'Potatuhs is a brand + content + commerce operation, so its KPIs cluster by which part of the machine they measure. Concrete, potato-flavored examples:
+
+AUDIENCE & CONTENT (is the brand reaching people?):
+- Weekly YouTube watch-time hours (lagging outcome) and videos published per week (leading input that drives it).
+- Subscriber net growth per month -- net, so it punishes churn, not just gross sign-ups.
+- The Tater Times newsletter open rate and click-through rate (a vanity version would be raw subscriber count; open rate is the honest one).
+- Average view duration / retention % on a video -- did potatofolk actually watch, or bounce in 5 seconds?
+
+COMMERCE (does the storefront make money?):
+- Checkout conversion rate on the Shopify storefront (visitors who buy).
+- Average order value (AOV) -- are people buying one sticker or a loaded bundle?
+- Repeat purchase rate -- the share of customers who come back, which proxies whether the brand has real fans vs one-time curiosity buys.
+
+PRODUCT & DEV (is the workbench healthy?):
+- Deploy frequency across the repos, and lead time from commit to live -- classic engineering-velocity KPIs.
+- For THIS repo''s archive engine: entries logged per active day (is the learning engine actually being fed?) and quiz pass rate on eval mode (did the concepts stick, the whole point of the engine).
+
+BRAND BUILD-OUT (is the world getting more real?):
+- Character profiles completed toward the target of 52 -- a project-completion KPI, where the objective ("a fully populated Potatuhs universe") is qualitative but the count is a clean proxy.
+
+Notice the pattern across all of them: each pairs to an objective (reach, revenue, velocity, world-building), most have an obvious leading input you can actually work on, and the good ones resist gaming -- "watch-time" and "repeat purchases" are hard to fake in a way that does not also mean real success, whereas "total followers" would be a vanity number. For a one-person-plus-Claude operation, the honest advice is to pick ONE KPI per active front (one audience, one commerce, one product) rather than tracking all twelve -- focus beats a crowded dashboard.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (92, 'KPI (Key Performance Indicator)', 'A single chosen measurable number that signals whether you are progressing toward a goal -- a gauge, not a steering wheel.'),
+  (92, 'objective', 'The qualitative destination or "why" behind work; you cannot measure it directly, so you pick KPIs as proxies for it.'),
+  (92, 'OKR (Objectives and Key Results)', 'A goal-setting framework: a qualitative Objective paired with a few measurable Key Results (KPIs with targets) that define success.'),
+  (92, 'target', 'A KPI plus a specific number and deadline (e.g. "to 500/week by Sept 1") -- what turns a metric into something you can pass or fail.'),
+  (93, 'vanity metric', 'A number that looks impressive and mostly only goes up (total signups, page views) but does not tie to a real decision or business health.'),
+  (93, 'actionable metric', 'A metric tied to a specific decision and movable by your own actions -- the opposite of a vanity metric.'),
+  (93, 'leading vs lagging indicator', 'A lagging indicator measures the outcome after the fact (revenue); a leading indicator moves earlier and predicts it (trial signups), so you can still act on it.'),
+  (93, 'Goodhart''s Law', '"When a measure becomes a target, it ceases to be a good measure" -- people optimize the number itself, gaming it away from the real goal.'),
+  (93, 'SMART criteria', 'A checklist for goals/KPIs: Specific, Measurable, Achievable, Relevant, Time-bound.'),
+  (94, 'driver tree (metric tree)', 'Breaking a top-level KPI into the smaller metrics that mathematically produce it (Revenue = visitors x conversion x order value), exposing the levers.'),
+  (94, 'input vs output metric', 'Output (lagging) metrics are results you cannot touch directly (revenue); input (leading) metrics are the controllable actions that feed them (videos shipped). Tasks attach to inputs.'),
+  (94, 'leverage / highest-leverage', 'The lever in the driver tree where a realistic change produces the biggest move in the top number -- where effort should go first.'),
+  (94, 'ICE / RICE prioritization', 'Lightweight scoring to rank tasks: ICE = Impact x Confidence x Ease; RICE = Reach x Impact x Confidence / Effort.'),
+  (94, 'build-measure-learn', 'Treating each task as a hypothesis: ship it, measure whether the metric moved, keep what works and drop what does not.'),
+  (95, 'churn', 'The rate at which existing users/customers/subscribers leave; "net growth" subtracts churn from gross additions to show real progress.'),
+  (95, 'conversion rate', 'The share of people who take a desired action (e.g. visitors who actually buy) -- a core commerce KPI.'),
+  (95, 'average order value (AOV)', 'The average amount spent per order -- a lever for revenue that is independent of how many customers you have.'),
+  (95, 'deploy frequency / lead time', 'Engineering-velocity KPIs: how often you ship to production, and how long code takes to go from commit to live.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(92, 'In the objective -> KPI -> task hierarchy, which can you act on DIRECTLY?',
+ 'The objective, by willing it to happen',
+ 'The KPI, by adjusting the number',
+ 'The tasks, which you then hope move the KPI',
+ 'All three are acted on directly and equally',
+ 2,
+ 'You never "do" an objective or a KPI directly -- you do tasks and watch the KPI to see whether they moved you toward the objective.'),
+(93, 'Why is "total registered users since launch" usually a weak KPI?',
+ 'It is impossible to measure accurately',
+ 'It is a vanity metric -- it only goes up and does not tie to a real decision or current health',
+ 'It violates SMART because it is too specific',
+ 'It is a leading indicator, which are always bad',
+ 1,
+ 'A number that only ever rises and is not tied to a decision is a vanity metric; an actionable metric like weekly active users reflects real, current health.'),
+(94, 'You want to grow revenue. What is the right first move to decide which tasks to do?',
+ 'Pick whichever task sounds most fun and start building',
+ 'Decompose revenue into its driver tree (visitors x conversion x order value) and attack the weakest movable lever',
+ 'Set revenue itself as a daily task and work on it directly',
+ 'Add as many metrics to the dashboard as possible',
+ 1,
+ 'You cannot act on revenue directly; you break it into input levers via a driver tree, then choose tasks that move the highest-leverage one.'),
+(95, 'Which of these is the most honest (least gameable) KPI for the Potatuhs storefront?',
+ 'Total social media followers',
+ 'Number of times the logo was viewed',
+ 'Repeat purchase rate -- the share of customers who buy again',
+ 'Total pages on the website',
+ 2,
+ 'Repeat purchases are hard to fake in a way that is not also real success (loyal customers), whereas follower and page counts are classic vanity metrics.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(96, '2026-06-23', 5, 'What are some example KPIs for a potato farmer?',
+'A potato farmer is running a biological factory with one harvest a year, so the KPIs cluster around getting the most sellable spuds per acre at the lowest input cost, then not losing them in storage.
+
+PRODUCTION (the headline output):
+- Yield per acre -- usually measured in hundredweight (cwt) per acre, or tons per hectare. This is the top-line lagging number the whole season feeds into.
+- Marketable yield % -- of everything you dig up, what fraction actually grades out for sale vs culls (too small, green, scab, rot, mechanical damage). A huge gross yield with 30% culls is worse than a modest yield that is nearly all sellable.
+- Size profile / size distribution -- the share of tubers in the size band your buyer wants. A fry-contract buyer pays for long tubers; a seed or baby-potato market wants small. Same field, different "good".
+
+INPUT EFFICIENCY (the cost levers):
+- Cost per cwt produced (not just cost per acre) -- ties spending to actual sellable output, the honest unit-cost KPI.
+- Water-use efficiency -- yield per acre-inch of irrigation, which matters where water is metered or scarce.
+- Fertilizer/chemical cost per acre and nitrogen-use efficiency.
+
+QUALITY & RISK:
+- Specific gravity -- a density measure that predicts solids content; processors paying for chips/fries care intensely about it, and it is often a contract bonus/penalty line.
+- Disease/pest incidence -- e.g. % of acres showing late blight, the share affected by a target threshold; a leading indicator that predicts both yield loss and spray cost.
+
+POST-HARVEST (where money quietly leaks):
+- Storage loss / shrink % -- potatoes are stored for months, and shrink from dehydration, sprouting, and rot can erase a good harvest. Pounds lost between bin-in and ship-out.
+- Price realized per cwt vs contract -- what you actually got paid against what you were promised or against the open market.
+
+Notice the supply-chain framing: yield is the lagging output, while irrigation, disease scouting, and storage conditions are the leading, controllable inputs -- exactly the input-vs-output split from earlier today. A farmer who only watches final yield is reading the thermometer after the patient has left; the leading KPIs (disease incidence, water efficiency, storage shrink) are the ones you can still act on in time.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(97, '2026-06-23', 6, 'What are some example KPIs for a trucker?',
+'Trucking is a thin-margin asset-utilization game: an expensive truck either earns money by rolling loaded or bleeds money sitting or running empty. The KPIs measure money-per-mile, how fully the asset is used, and safety -- because one crash erases a year of margin.
+
+ECONOMICS (per-mile is the unit):
+- Cost per mile (CPM) -- total operating cost (fuel, maintenance, insurance, pay, depreciation) divided by miles. The single most-watched number in trucking.
+- Revenue per mile, and specifically revenue per LOADED mile -- what you earn when actually hauling freight.
+- Deadhead percentage -- the share of miles driven EMPTY (repositioning with no load). High deadhead is pure cost with zero revenue; cutting it is one of the biggest leading levers.
+
+UTILIZATION (is the asset working?):
+- Miles per truck per week / asset utilization -- how hard each truck and driver is being used against its capacity.
+- Load factor -- how full each trailer is (weight or cubic space). Hauling air is wasted capacity.
+
+SERVICE (do shippers keep hiring you?):
+- On-time delivery rate -- the share of loads delivered in the promised window; the core service KPI customers judge you on.
+- Claims / cargo damage rate -- for perishables like potatoes this includes reefer (refrigerated) temperature compliance: loads that broke the cold chain and spoiled.
+
+EFFICIENCY & SAFETY:
+- Fuel efficiency (MPG) -- fuel is often the #1 or #2 cost, so a fraction of an MPG across a fleet is real money; driver behavior (idling, speed) is the leading input.
+- Accidents per million miles / CSA safety score / hours-of-service (HOS) compliance -- safety is a KPI because it is also an existential cost: crashes, fines, and lost authority.
+- Maintenance cost per mile and unplanned downtime hours -- a truck in the shop earns nothing.
+- Driver turnover rate -- recruiting and training drivers is expensive, so churn is a tracked cost in its own right.
+
+The through-line: cost-per-mile is the lagging output, and deadhead %, MPG, on-time %, and downtime are the controllable inputs that drive it -- you do not move CPM directly, you cut empty miles and idling and the number follows.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(98, '2026-06-23', 7, 'What are some example KPIs for a potato processor?',
+'A processor turns raw potatoes into fries, chips, hash browns, dehydrated flakes, or starch. It is a manufacturing operation, so the KPIs are factory KPIs: how much finished product you squeeze from each ton of raw input, how hard the line runs, and whether quality and food safety hold.
+
+YIELD & THROUGHPUT (the core of the economics):
+- Recovery / yield rate -- pounds of finished product per ton of raw potatoes in. This is THE number: potatoes are ~80% water, and peeling, trimming, and defect removal eat into the rest, so a few points of recovery is enormous margin. Raw input is the biggest cost, so wasting it is the cardinal sin.
+- Throughput -- tons (or cases) per hour the line produces. Sets how much fixed cost gets spread across product.
+
+EQUIPMENT EFFICIENCY:
+- OEE (Overall Equipment Effectiveness) -- the standard factory KPI, the product of three: Availability (was the line running vs down?) x Performance (running at rated speed?) x Quality (output that passed first time?). One number that captures whether the plant is actually delivering its capacity.
+- Unplanned downtime hours -- the availability killer; every hour the fryer or peeler is stopped is lost product against fixed cost.
+
+QUALITY & WASTE:
+- First-pass yield / quality grade rate -- the share of product that passes spec without rework or downgrade (right color, length, defect-free fries).
+- Scrap / waste % -- product or raw material lost to defects, off-spec, or trim beyond normal.
+
+COST & RESOURCES:
+- Cost per unit produced (per case, per pound).
+- Energy and water per ton -- frying and washing are utility-intensive, and these are both cost and sustainability KPIs.
+- Labor productivity -- units per labor hour.
+
+SAFETY (non-negotiable in food):
+- Food-safety audit score, contamination/pathogen incidents, and recall events -- a recall is a catastrophic, brand-ending failure, so these are watched as risk KPIs even though "zero" is the only acceptable target.
+
+The recurring pattern: recovery rate and OEE are the lagging outputs everyone reports, while downtime, line speed, and defect rate are the input levers you actually pull -- and because raw potatoes dominate the cost, recovery is usually the single highest-leverage KPI in the whole plant.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(99, '2026-06-23', 8, 'What are some example KPIs for a potato distributor?',
+'A distributor is the middle of the chain -- it buys potatoes (raw or processed) in bulk, warehouses them, and moves them to retailers and foodservice. The product is perishable, margins are thin, and the whole job is logistics, so the KPIs are about not running out, not spoiling inventory, and shipping complete orders on time.
+
+SERVICE LEVEL (do customers get what they ordered?):
+- Order fill rate -- the share of ordered units actually shipped from stock. A retailer that orders 100 cases and gets 90 had a 90% fill; chronic shortfalls lose the account.
+- On-Time In-Full (OTIF) -- the stricter combined KPI: the order arrived on time AND complete. The gold-standard distribution service metric.
+- Stockout rate -- how often an item is unavailable when a customer wants it; the flip side of fill rate and a direct lost-sale measure.
+
+INVENTORY HEALTH (the perishable tightrope):
+- Inventory turnover -- how many times you sell through and replace stock in a period. For fresh potatoes you WANT high turns because the product rots; slow turns mean spoilage.
+- Spoilage / shrink % -- product written off to rot, damage, or expiry. The defining cost of perishable distribution, and the number that punishes over-ordering.
+- Days of supply / days inventory outstanding -- how many days of demand your current stock covers; too low risks stockouts, too high risks spoilage. The balance IS the job.
+
+OPERATIONS (the warehouse):
+- Picking accuracy -- share of order lines picked correctly (right item, right count); errors cause returns and chargebacks.
+- Warehouse throughput -- cases or pallets shipped per labor hour or per day.
+- Cold-chain compliance -- share of time product stayed in the required temperature band, since a break means spoilage downstream.
+
+ECONOMICS:
+- Cost per case (or per pallet) shipped -- the unit logistics cost.
+- Gross margin per SKU -- thin-margin businesses live and die on the mix of what they move.
+- Customer retention / returns rate -- whether buyers keep coming back, and how much comes back rejected.
+
+The tension that defines distributor KPIs: fill rate and spoilage pull in opposite directions -- carry more stock and you never stock out but you spoil more; carry less and you waste nothing but miss orders. Days-of-supply and inventory turnover are the dials you tune to sit in the narrow band between those two failures.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (96, 'yield per acre (cwt/acre)', 'The headline farm-output KPI: hundredweight of potatoes harvested per acre (or tons per hectare).'),
+  (96, 'marketable yield / cull rate', 'The share of harvested potatoes that grade out as sellable vs culls (undersized, damaged, diseased) that are discarded.'),
+  (96, 'specific gravity', 'A density measure predicting a potato''s solids content; processing buyers pay bonuses/penalties on it because it affects fry and chip quality.'),
+  (96, 'shrink / storage loss', 'Weight lost during months of storage to dehydration, sprouting, and rot -- it can quietly erase a good harvest.'),
+  (97, 'cost per mile (CPM)', 'Total operating cost divided by miles driven -- the central economic KPI in trucking.'),
+  (97, 'deadhead', 'Miles driven empty while repositioning with no load -- pure cost, zero revenue; a key efficiency lever to minimize.'),
+  (97, 'asset utilization', 'How fully an expensive asset (the truck) is used against its capacity -- e.g. loaded miles per truck per week.'),
+  (97, 'cold chain / reefer compliance', 'Keeping perishable freight within a required refrigerated temperature band the whole trip; a break spoils the load.'),
+  (98, 'recovery / yield rate', 'Finished product produced per ton of raw potatoes in -- the dominant processor KPI, since raw input is the biggest cost.'),
+  (98, 'OEE (Overall Equipment Effectiveness)', 'A standard factory KPI = Availability x Performance x Quality; one number for how much of rated capacity a line actually delivers.'),
+  (98, 'first-pass yield', 'The share of output that passes spec the first time with no rework or downgrade.'),
+  (98, 'throughput', 'The rate of production -- tons or cases per hour -- over which fixed costs get spread.'),
+  (99, 'order fill rate', 'The share of ordered units actually shipped from stock; the core distributor service KPI.'),
+  (99, 'OTIF (On-Time In-Full)', 'The strict service KPI: an order delivered both on time and complete.'),
+  (99, 'inventory turnover', 'How many times stock is sold through and replaced in a period; high turns matter most for perishables that rot.'),
+  (99, 'days of supply', 'How many days of demand current inventory covers -- tuned between stockout risk (too low) and spoilage risk (too high).');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(96, 'A farmer''s field has a huge gross yield per acre, but 35% of the potatoes are culls. Which KPI exposes the problem that raw yield hides?',
+ 'Specific gravity',
+ 'Marketable yield % (sellable fraction after culls)',
+ 'Cost per acre',
+ 'Water-use efficiency',
+ 1,
+ 'Gross yield counts everything dug up; marketable yield % strips out culls to show how much is actually sellable -- a high gross with many culls is a weak result.'),
+(97, 'Why is deadhead percentage such an important KPI for a trucker?',
+ 'It measures how fast the truck can legally drive',
+ 'It is the share of miles driven empty -- pure cost with no revenue, so cutting it directly improves margin',
+ 'It tracks how many drivers quit each year',
+ 'It measures the refrigeration temperature of the load',
+ 1,
+ 'Deadhead miles are driven empty: full operating cost, zero revenue. Reducing them is one of the highest-leverage ways to lift per-mile profitability.'),
+(98, 'For a potato processor, why is recovery (yield) rate usually the single highest-leverage KPI?',
+ 'Because finished product never spoils',
+ 'Because raw potatoes are the biggest cost, so squeezing more finished product per ton of input drives the most margin',
+ 'Because it is the easiest number to measure',
+ 'Because customers see it on the package',
+ 1,
+ 'Raw input dominates a processor''s cost, so a few points more finished product per ton of potatoes is enormous margin -- recovery rate is the core lever.'),
+(99, 'A potato distributor''s fill rate and spoilage % pull in opposite directions. Which KPI is the dial used to balance them?',
+ 'Cost per mile',
+ 'Specific gravity',
+ 'Days of supply (how many days of demand current stock covers)',
+ 'Overall Equipment Effectiveness',
+ 2,
+ 'More stock raises fill rate but spoils more; less stock cuts spoilage but risks stockouts. Days of supply is the dial tuned to sit between those two failures.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-06-27', 'qa', 'Ontology and epistemology -- two words philosophers use, and where they show up in code');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(100, '2026-06-27', 1, 'What is ontology?',
+'Ontology is the branch of philosophy that asks "what exists, and how is it organized?" Strip away the philosophy-class vibe and it is just this: a careful account of WHAT THINGS ARE and HOW THEY RELATE. What categories of thing exist, what counts as the same thing vs. a different thing, and which things are kinds of other things.
+
+A plain example: is a "shadow" a thing that exists, or just the absence of light? Is a company a real entity, or just a label for a group of people? Those are ontological questions -- they are about the furniture of reality, not about how we know things (that is epistemology, its sister concept).
+
+Here is why a developer should care: you do ontology every single time you design a data model, and most people never notice. When you decide your app has Users, and a User HAS MANY Orders, and an Order BELONGS TO a Customer (and you then have to decide whether a Customer is the same thing as a User or a different thing) -- that is ontology. You are declaring what exists in your system and how those things relate. A database schema is a small, enforced ontology. Class hierarchies are ontology. The is-a relationship ("a Dog is-a Animal") and the has-a relationship ("a Car has-a Engine") are the two backbone relations of both OOP and formal ontologies.
+
+The word also has a hard technical meaning in computer science. In the Semantic Web / knowledge-graph world, an "ontology" is a literal, machine-readable file (written in languages like OWL or RDF Schema) that formally defines the entities, categories, properties, and relationships in some domain -- so that software can reason about them. Schema.org, the vocabulary that tells Google a web page is about a Recipe with a cookTime and an author, is exactly this kind of ontology.
+
+The one-sentence version: ontology is the study of what exists and how it is categorized, and you are practicing it -- informally -- the moment you choose your tables, types, and relationships.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(101, '2026-06-27', 2, 'What is epistemology?',
+'Epistemology is the branch of philosophy that asks "what is knowledge, and how do we know what we know?" If ontology is about WHAT EXISTS, epistemology is about HOW WE COME TO KNOW IT -- and how we tell justified, true belief apart from a lucky guess. The two are sisters: one is about reality, the other is about our access to reality.
+
+The classic definition it wrestles with is "knowledge = justified true belief." To count as KNOWING something, three things have to line up: you believe it, it is actually true, AND you have good reason (justification) for believing it. Guessing the right answer is not knowledge, because the justification is missing. Most of epistemology is poking at the edges of that definition -- when is evidence good enough, how do we handle being wrong, what makes a source trustworthy.
+
+Why this matters to a developer, concretely: software is full of moments where you have to ask "how do I actually KNOW this is true?" rather than just believing it.
+- "The bug is fixed." Do you KNOW that, or do you believe it because the code looks right? Writing a failing test, then watching it pass, is epistemology in action -- it is the justification that upgrades a belief into knowledge.
+- "Reading what Claude actually did vs. what it claims it did" (a fundamental in this very repo) is a pure epistemology move: do not accept the claim, check the evidence.
+- Logs, tests, monitoring, and reproducible bug reports all exist for one reason -- to give you justified knowledge of what your system is really doing instead of a comfortable belief.
+
+It also names the failure modes. When you assume a fix works without verifying, you have a belief that is not knowledge. When you trust a Stack Overflow answer because it has lots of upvotes, you are leaning on a specific (and sometimes weak) source of justification. Good engineering is largely applied epistemology: building cheap ways to find out whether what you believe is actually true, before it costs you.
+
+The one-sentence version: epistemology is the study of knowledge and justification -- and as a developer you practice it every time you refuse to trust a claim until you have evidence for it.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (100, 'ontology', 'The philosophical study of what exists and how it is categorized; in CS, a machine-readable formal definition of the entities and relationships in a domain.'),
+  (100, 'is-a / has-a relationships', 'The two backbone relations for organizing things: is-a expresses a kind/subtype (a Dog is-a Animal), has-a expresses composition (a Car has-a Engine).'),
+  (100, 'schema as ontology', 'A database schema or class hierarchy is a small enforced ontology -- it declares what entities exist in a system and how they relate.'),
+  (100, 'OWL / RDF (Semantic Web)', 'Languages for writing literal ontology files that let software reason about entities and relationships; schema.org is a widely used example.'),
+  (101, 'epistemology', 'The philosophical study of knowledge -- what it is and how we come to know things, distinguishing justified belief from lucky guesses.'),
+  (101, 'justified true belief', 'The classic definition of knowledge: to know something you must believe it, it must be true, AND you must have good reason for believing it.'),
+  (101, 'justification', 'The good reason or evidence that upgrades a mere belief into knowledge; a passing test is justification that a fix works.'),
+  (101, 'applied epistemology (in engineering)', 'Tests, logs, monitoring, and verification exist to convert beliefs about a system into justified knowledge of what it actually does.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(100, 'You design a schema where a User HAS MANY Orders and decide a Customer is a separate entity from a User. In philosophical terms, what are you doing?',
+ 'Epistemology -- deciding how you know the data is correct',
+ 'Ontology -- declaring what entities exist in your system and how they relate',
+ 'Just normalization, unrelated to philosophy',
+ 'Defining the justification for your beliefs',
+ 1,
+ 'Choosing what entities exist (User, Order, Customer) and how they relate (has-many, same-or-different) is ontology: an account of what exists and how it is categorized. A schema is a small enforced ontology.'),
+(101, 'You believe a bug is fixed because the code "looks right," but you have not run any test. Epistemologically, what is missing for this to count as knowledge?',
+ 'The belief -- you do not actually believe it',
+ 'The truth -- the bug is definitely still there',
+ 'The justification -- you have no evidence (like a passing test) backing the belief',
+ 'Nothing; looking right is sufficient justification',
+ 2,
+ 'Knowledge is justified true belief. You have the belief, but without evidence such as a failing-then-passing test you lack justification, so it stays a belief, not knowledge.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(102, '2026-06-27', 3, 'What is tzimtzum?',
+'Tzimtzum (Hebrew, roughly "contraction" or "withdrawal") is a core idea from Kabbalah -- Jewish mysticism -- specifically the system worked out by Rabbi Isaac Luria in 16th-century Safed. It is an answer to a deceptively simple puzzle: if God is infinite and fills literally all of reality, then there is no "room" anywhere for a world to exist. An infinite, all-filling presence leaves no empty space for anything that is not God.
+
+Luria''s answer is tzimtzum: before creating, God CONTRACTS -- withdraws or conceals the infinite divine light from a region, creating a kind of vacated space (the "chalal" or void). Into that cleared-out space, a measured beam of light is then projected, and the finite world is built inside it. So creation begins not with an outpouring but with a SELF-LIMITATION. The first creative act is making absence, an empty room, so that something other than the creator can exist at all.
+
+The big, counterintuitive move here is that creation requires the creator to STEP BACK, not lean in. Existence, autonomy, even the possibility of free will and of a world that feels separate from God -- all of it depends on the creator restraining presence rather than flooding the space. Withdrawal is the generous act.
+
+Two related Lurianic terms usually travel with it: shevirat ha-kelim ("the shattering of the vessels") -- the vessels meant to hold the divine light could not contain it and broke, scattering sparks of holiness into the world -- and tikkun olam ("repair of the world"), the human task of gathering those scattered sparks. Tzimtzum is the opening move of that whole cosmic drama.
+
+There is a clean cross-over to how you work, and it is worth naming rather than forcing. A creator who fills every gap leaves no room for the created thing to be itself. Good mentorship, good management, good API design, and -- bluntly -- good use of a tool like Claude all share this shape: you have to leave deliberate space for the other party to act. Over-specify every detail and you crowd out the collaborator''s contribution; withhold all structure and nothing coherent forms. The skill is the measured contraction -- clear enough space for real work to happen, then project just enough structure into it. That is tzimtzum as a working principle: sometimes the most creative thing you can do is withdraw and make room.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (102, 'tzimtzum', 'A Kabbalistic concept: God''s self-contraction or withdrawal of infinite light to make empty space in which a finite world can exist.'),
+  (102, 'Kabbalah', 'The tradition of Jewish mysticism; tzimtzum comes from its Lurianic strand, systematized by Rabbi Isaac Luria in 16th-century Safed.'),
+  (102, 'shevirat ha-kelim', '"Shattering of the vessels" -- the Lurianic idea that the vessels meant to hold the divine light broke, scattering holy sparks into the world.'),
+  (102, 'tikkun olam', '"Repair of the world" -- the human task of gathering the scattered sparks; the redemptive counterpart to tzimtzum and the shattering.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(102, 'In Lurianic Kabbalah, what is the core move of tzimtzum, and why is it needed?',
+ 'God pours out infinite light to flood and fill all of creation',
+ 'God contracts/withdraws the infinite light to make empty space in which a finite world can exist',
+ 'Humans gather scattered sparks of holiness to repair the world',
+ 'The vessels holding the divine light shatter and scatter sparks',
+ 1,
+ 'Tzimtzum is self-limitation: an infinite, all-filling presence leaves no room for a world, so God withdraws to create vacated space. The shattering (shevirat ha-kelim) and repair (tikkun olam) are later steps in the drama, not tzimtzum itself.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(103, '2026-06-27', 4, 'What are the competing ideas on the expansion and contraction of the universe?',
+'Start with the one thing that is NOT in dispute: the universe is expanding right now. Edwin Hubble showed in the 1920s that distant galaxies are racing away from us, and the farther they are the faster they go -- space itself is stretching. Rewind that expansion and everything was once hot and dense: the Big Bang. The genuine debate is not "is it expanding" but "what happens in the very long run -- does expansion continue forever, reverse into a collapse, or cycle?" The answer hinges on two unknowns: how much total stuff (gravity, which pulls inward) the universe contains, and the nature of DARK ENERGY (a mysterious pressure that pushes outward and currently dominates).
+
+THE THREE CLASSIC FATES (these came from asking whether gravity can win):
+- BIG FREEZE / HEAT DEATH -- expansion continues forever and gradually wins. Stars burn out, galaxies drift apart, everything cools toward a uniform, near-absolute-zero, maximally-disordered state where nothing more can happen. This is the current front-runner given the evidence.
+- BIG CRUNCH -- if there were enough matter, gravity eventually halts the expansion and reverses it; the universe falls back together into a hot, dense point -- the Big Bang run in reverse. This was the leading "closed universe" idea before dark energy was discovered.
+- THE FLAT/CRITICAL CASE -- exactly enough matter to slow expansion asymptotically toward a stop without ever reversing. A knife-edge balance.
+
+THE DARK-ENERGY-ERA IDEAS (these came from the 1998 shock that expansion is ACCELERATING):
+- ACCELERATING EXPANSION (the standard model today) -- dark energy is not just present but dominant and constant, so expansion speeds up over time. This points toward the Big Freeze, just faster and lonelier.
+- BIG RIP -- if dark energy''s push GROWS stronger over time ("phantom dark energy"), it eventually overwhelms gravity at every scale: first galaxies, then solar systems, then atoms themselves are torn apart at a finite future moment. A violent, expansion-wins-totally ending.
+
+THE CYCLIC IDEAS (these reject "one beginning, one end"):
+- BIG BOUNCE / OSCILLATING UNIVERSE -- a crunch does not end in a point but "bounces" into a new expansion; the universe goes through endless bang-crunch-bang cycles. The old oscillating model ran into entropy problems (each cycle should get more disordered).
+- CYCLIC / EKPYROTIC MODELS (Steinhardt-Turok) -- a modern revival using ideas from string theory where colliding higher-dimensional "branes" trigger repeating big bangs, sidestepping some of the old entropy objections.
+- CONFORMAL CYCLIC COSMOLOGY (Roger Penrose) -- the far-future heat-death of one universe, once nothing with mass or scale is left, is geometrically equivalent to the Big Bang of the next "aeon," so the story repeats without a literal crunch.
+
+A historical footnote: the STEADY STATE theory (Hoyle, mid-20th century) held the universe expands but has no beginning or end, with new matter continuously created to keep density constant. It was a real rival to the Big Bang until the cosmic microwave background -- the leftover heat-glow of the early hot universe -- was found in 1965 and effectively killed it.
+
+The honest bottom line: current measurements favor a flat, dark-energy-dominated universe heading for an accelerating Big Freeze. But because we do not actually understand what dark energy IS, whether it stays constant (Freeze), strengthens (Rip), or could someday reverse (Crunch/Bounce) is genuinely open. The competing ideas are really competing bets about the behavior of a force we have measured but cannot explain.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (103, 'dark energy', 'A not-understood outward pressure that currently dominates the universe and drives accelerating expansion; whether it stays constant, grows, or reverses determines the universe''s fate.'),
+  (103, 'Big Freeze / heat death', 'The fate where expansion continues forever and the universe cools to a uniform, maximally-disordered, near-absolute-zero state; the current front-runner.'),
+  (103, 'Big Crunch', 'The fate where gravity halts and reverses expansion, collapsing the universe back into a hot dense point -- the Big Bang in reverse.'),
+  (103, 'Big Rip', 'A fate where dark energy strengthens over time until it tears apart galaxies, solar systems, and finally atoms at a finite future moment.'),
+  (103, 'Big Bounce / cyclic cosmology', 'Models where the universe repeats: a collapse bounces into a new expansion, or aeons/brane-collisions trigger endless big bangs.'),
+  (103, 'cosmic microwave background (CMB)', 'The leftover heat-glow of the early hot universe, detected in 1965; its discovery confirmed the Big Bang and killed the steady-state theory.'),
+  (103, 'critical density / flat universe', 'The knife-edge amount of matter-energy that separates a universe that recollapses from one that expands forever; measurements show ours is very close to flat.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(103, 'Which single unknown most directly determines whether the universe ends in a Big Freeze, a Big Rip, or a Big Crunch?',
+ 'The exact age of the universe',
+ 'The behavior of dark energy -- whether it stays constant, strengthens, or could reverse',
+ 'How many galaxies currently exist',
+ 'The temperature of the cosmic microwave background',
+ 1,
+ 'The fate hinges on dark energy: constant dark energy points to an accelerating Big Freeze, strengthening (phantom) dark energy gives a Big Rip, and a weakening or reversing push could allow a Crunch or Bounce. We have measured dark energy but cannot yet explain it.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(104, '2026-06-27', 5, 'What is hashing in computer science?',
+'Hashing is taking some input of ANY size -- a word, a file, a whole database row -- and running it through a function that spits out a fixed-size value, called a HASH (or digest). The function is the HASH FUNCTION. Same input always produces the same output; a different input almost always produces a different output. The output looks scrambled and is usually much smaller than the input. Crucially, hashing is ONE-WAY by design: easy to compute forward (input -> hash), effectively impossible to run backward (hash -> input).
+
+A useful mental image: a hash is a fingerprint. A fingerprint is tiny compared to the whole person, two different people essentially never share one, and you cannot reconstruct the person from the fingerprint. But if you have the person, you can always re-take the print and check it matches.
+
+There are two big families of use, and they care about different properties.
+
+1. HASH TABLES (the data-structure use -- this is the one that makes hashing a daily tool).
+A hash table is the machinery behind a Python dict, a JavaScript object/Map, a Java HashMap, a Go map. The problem it solves: you want to store key-value pairs and look them up FAST. Naively, finding a key in a list means scanning every entry -- slow when there are millions. Instead, you hash the key to get a number, and use that number (mod the array size) as an INDEX into an array of "buckets." Now lookup is: hash the key, jump straight to that bucket. That turns search from O(n) -- check everything -- into roughly O(1) -- constant time, regardless of how big the table gets. That speed is why hash tables are everywhere.
+The wrinkle is COLLISIONS: two different keys can hash to the same bucket (the output space is finite, the input space is not). Hash tables handle this with strategies like chaining (each bucket holds a small list) or open addressing (probe for the next free slot). A good hash function spreads keys evenly so collisions stay rare.
+
+2. CRYPTOGRAPHIC HASHING (the security use).
+Here you use a special, much stronger hash function (SHA-256, for example) and you lean on the one-way property. Key applications:
+- INTEGRITY / verification: download a file plus its published hash, re-hash the file yourself, compare. If even one bit changed, the hash is wildly different (the "avalanche effect"), so you know the file was corrupted or tampered with.
+- PASSWORD STORAGE: a server should NEVER store your actual password. It stores the hash. When you log in, it hashes what you typed and compares hashes. If the database leaks, attackers get hashes, not passwords. (In practice you add a random SALT to each password before hashing, so identical passwords do not produce identical hashes and precomputed "rainbow table" attacks fail.)
+- Git, blockchains, deduplication, digital signatures all lean on content-addressing by hash -- the hash IS the identity of the content.
+
+The properties that make a hash function "good" depend on the job:
+- For hash tables: fast to compute, and spreads inputs evenly to minimize collisions.
+- For cryptography: also deterministic and fast to verify, PLUS irreversible (cannot get input from output) and collision-RESISTANT (you cannot feasibly find two inputs with the same hash) -- properties an ordinary hash-table hash does not need and does not have.
+
+The one-sentence version: hashing maps arbitrary data to a fixed-size fingerprint -- used either to find things instantly (hash tables) or to verify and protect things without revealing them (cryptographic hashing).');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (104, 'hash function', 'A function that maps input of any size to a fixed-size output (the hash/digest); deterministic and one-way -- easy forward, infeasible backward.'),
+  (104, 'hash table', 'A data structure that stores key-value pairs and uses the hash of a key as an array index, giving roughly O(1) lookup; the engine behind dicts/maps/objects.'),
+  (104, 'collision', 'When two different inputs hash to the same value/bucket; unavoidable because inputs are infinite and outputs finite, handled by chaining or open addressing.'),
+  (104, 'O(1) constant time', 'An operation whose cost does not grow with the size of the data -- hash-table lookups approximate this, vs O(n) scanning every element.'),
+  (104, 'cryptographic hash (e.g. SHA-256)', 'A hardened hash function that is irreversible and collision-resistant, used for integrity checks, password storage, and content addressing.'),
+  (104, 'salt', 'A random value added to a password before hashing so identical passwords get different hashes, defeating precomputed rainbow-table attacks.'),
+  (104, 'avalanche effect', 'The property that changing even one bit of input produces a drastically different hash -- what makes tampering detectable.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(104, 'Why does a hash table make key lookups roughly O(1) instead of O(n)?',
+ 'It keeps all keys sorted so it can binary-search them',
+ 'It hashes the key to compute an array index and jumps straight to that bucket, instead of scanning every entry',
+ 'It stores fewer items than a list does',
+ 'It compresses the keys so they take less memory',
+ 1,
+ 'Hashing the key yields a number used directly as an index into the bucket array, so lookup goes straight to the location instead of checking each element in turn -- constant time rather than linear scanning.');
