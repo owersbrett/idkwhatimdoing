@@ -3770,3 +3770,175 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'It compresses the keys so they take less memory',
  1,
  'Hashing the key yields a number used directly as an index into the bucket array, so lookup goes straight to the location instead of checking each element in turn -- constant time rather than linear scanning.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-06-30', 'qa', 'Claude primitives -- goal, skill, and loop');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(105, '2026-06-30', 1, 'What is a Claude goal?',
+'A goal is the end-state you hand Claude -- the "done" you are steering toward, stated as an OUTCOME rather than a list of keystrokes. Correction worth flagging loudly (the assistant got this wrong twice before checking the web): /goal IS a real built-in Claude Code command, shipped by Anthropic in version 2.1.139 on 2026-05-12. You set a COMPLETION CONDITION and Claude then works autonomously across multiple turns until the goal is met, tracking progress and monitoring resource usage (elapsed time, turns, tokens); it works in interactive CLI, programmatic (-p flag), and Remote Control modes. Note it is a built-in COMMAND/feature, not an installable Agent Skill -- it is NOT in the anthropics/skills repo. (Separately and confusingly, Brett also authored a CUSTOM project-scoped /goal at ~/Potatuhs/hpg/sod_tori/.claude/commands/goal.md -- a name collision that only loads inside that repo.) The deeper point stands regardless: a goal is the thing every other piece serves. The difference between a chatbot and an agent is exactly this: an agent is given a goal and keeps acting until the goal is met.
+
+A useful contrast is OUTCOME vs OUTPUT. An output is a step ("add an INSERT to seed.sql, then run the build script"). An outcome is a destination ("today''s archive page shows my three new entries, each with a working quiz"). You own the destination. Let Claude find the route, and correct it when the route is wrong. If you hand over the route instead of the destination, you have stopped using an agent and started using a very expensive autocomplete.
+
+A sharp goal carries three things:
+- AN OUTCOME -- what is true in the world when the work is done.
+- CONSTRAINTS -- what must NOT change, and which rules to respect (in this repo: never write entries straight into archive.db, always go through seed.sql).
+- A CHECK -- how you will know it actually worked (the page renders, the quiz scores, the db rebuilt without error).
+
+This is also why cyummu exists. "Building the wrong thing" is just "optimizing hard toward the wrong goal," and the expensive part is the optimizing. cyummu forces the goal to be explicit and shared BEFORE the loop spends any effort on it. Vague goal in, vague work out -- so the cheapest move you have is to make the destination unmistakable first.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (105, 'goal / objective', 'The desired end-state you hand an agent; what every action is steering toward. Not a command -- the thing commands serve.'),
+  (105, 'outcome vs output', 'An outcome is the destination (what is true when done); an output is a single step. Steer by outcome, delegate the steps.'),
+  (105, 'goal-directed (agentic)', 'Behavior that keeps acting until a goal is met, rather than emitting one fixed response. The defining trait of an agent.'),
+  (105, 'acceptance criteria', 'The concrete check that says a goal is met -- how you and Claude both agree the work is actually done.'),
+  (105, 'underspecification', 'Leaving the goal vague or implicit; the usual root cause of confidently-wrong work. cyummu is the fix.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(105, 'Which of these is a well-formed GOAL to hand Claude, rather than a list of steps?',
+ 'Open seed.sql, add an INSERT, then run the build script',
+ 'Today''s archive page shows my new entry with a working quiz, with seed.sql as the source of truth',
+ 'Run node scripts/build-db.mjs',
+ 'Edit line 3772 of seed.sql',
+ 1,
+ 'A goal states the outcome and its check (page renders, quiz works, seed.sql stays canonical) and leaves the route to Claude. The others are individual steps -- outputs, not the destination.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(106, '2026-06-30', 2, 'What is a Claude skill?',
+'A Skill is a packaged, reusable capability that Claude loads ON DEMAND. Concretely it is a folder containing a SKILL.md file: a little FRONTMATTER (a name and a one-line description) plus a body of instructions written in plain language, and optionally some helper scripts and reference files alongside it. When your task matches what the skill is for, Claude pulls the body into context and follows it.
+
+The mechanism that makes skills cheap is PROGRESSIVE DISCLOSURE. Only the short description sits in context all the time -- a single line per skill. The full instructions load only when a task actually matches that description. That is how a setup can have dozens of skills available (this environment lists cam-lesson, code-review, deep-research, the whole vercel:* family, and more) without drowning every conversation in their contents. The descriptions are a menu; the body is the meal, served only when ordered.
+
+You invoke a skill with the Skill tool, or by typing its name as a slash command (/code-review, /deep-research).
+
+It helps to keep four nearby things separate:
+- A SKILL is knowledge plus a procedure -- "here is how we do X in this project." It runs in the SAME conversation.
+- A TOOL is a single raw capability (Read a file, run Bash, edit text).
+- A SUBAGENT is a separate context window doing a chunk of work and reporting back a result -- a second brain, not a procedure.
+- An MCP SERVER is an external program that exposes extra tools to Claude.
+
+So a skill is not a separate brain and not a single button; it is a reusable play in the playbook. This repo leans on that idea constantly -- the three event streams in CLAUDE.md (BusinessEvent, DevelopmentEvent, Transcript) each point at their own SKILL.md. The payoff is that you teach Claude a repeatable procedure ONCE, and reuse it every session instead of re-explaining it from scratch.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (106, 'Agent Skill / SKILL.md', 'A folder with a SKILL.md file -- frontmatter plus plain-language instructions (and optional scripts) -- that packages a reusable procedure Claude loads on demand.'),
+  (106, 'frontmatter', 'The small metadata block at the top of a file (here: a skill''s name and one-line description) that tools read to decide relevance.'),
+  (106, 'progressive disclosure', 'Keeping only short descriptions in context and loading a skill''s full body only when a task matches -- how many skills coexist without bloating the window.'),
+  (106, 'slash command', 'Typing /name to invoke a skill or built-in command directly.'),
+  (106, 'subagent vs skill vs tool', 'A subagent is a separate context window (a second brain); a skill is a procedure run in the same conversation; a tool is one raw capability.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(106, 'What keeps a setup with dozens of available skills from flooding every conversation''s context window?',
+ 'Skills are stored in a database and never enter context',
+ 'Progressive disclosure -- only each skill''s one-line description stays loaded; the full body loads only when a task matches',
+ 'Only one skill is allowed to exist at a time',
+ 'Skills run on a separate server so they use no context',
+ 1,
+ 'Progressive disclosure means the always-on cost is just a short description per skill; the full instructions are pulled in on demand when the task matches, so many skills can coexist cheaply.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(107, '2026-06-30', 3, 'What is a Claude loop?',
+'"Loop" has two meanings worth holding at once -- one is the engine under everything, the other is a literal command.
+
+1. THE AGENTIC LOOP (the engine). This is the core cycle that makes Claude an agent instead of a chatbot. Claude is given a goal, PICKS an action (calls a tool), the tool runs in the real world, Claude READS the result, DECIDES the next action based on what actually happened, and repeats -- until the goal is met or it is genuinely stuck. Observe, decide, act; observe, decide, act. A plain chatbot emits one block of text and stops. An agent keeps turning this loop, which is the only reason it can do multi-step work: edit a file, run the build, see the error, fix the error, run again. Every loop needs a TERMINATION CONDITION -- a way to know it is done (goal met) or should stop (stuck, or out of budget) -- otherwise it would spin forever.
+
+2. THE /loop COMMAND (a literal feature). Separately, Claude Code has a /loop that runs a prompt or a slash command on a recurring INTERVAL -- "/loop 5m /check-deploys" runs that every five minutes -- or self-paced if you omit the interval and let the model decide when to fire again. It is for polling status, babysitting a long-running job, or repeating a task on a schedule. Do not confuse it with the agentic loop above: the agentic loop is the always-on heartbeat of a single task; /loop is a deliberate "keep doing this on a timer" wrapper you opt into.
+
+The triad ties together cleanly. GOAL is where you are going. SKILL is packaged know-how for getting there. LOOP is the act-observe-repeat motion that actually carries you. And cyummu sits above all three -- it makes sure the goal is right BEFORE the loop spends real effort chasing it.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (107, 'agentic loop', 'The observe-decide-act cycle: given a goal, Claude calls a tool, reads the result, chooses the next action, and repeats until done. What makes an agent more than a chatbot.'),
+  (107, 'tool call', 'A single action an agent takes in the world during the loop -- read a file, run a command, edit text -- whose result feeds the next decision.'),
+  (107, 'termination condition', 'The rule that ends a loop: goal met, stuck, or out of budget. Without one, a loop never stops.'),
+  (107, '/loop command', 'A Claude Code feature that re-runs a prompt or slash command on a recurring interval (or self-paced) -- for polling, babysitting jobs, or scheduled repetition.'),
+  (107, 'chatbot vs agent', 'A chatbot emits one response and stops; an agent runs the act-observe loop toward a goal, taking many steps.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(107, 'What most fundamentally distinguishes an agent from a plain chatbot?',
+ 'An agent uses a larger model',
+ 'An agent runs an act-observe-repeat loop toward a goal, calling tools and reacting to real results, instead of emitting a single response',
+ 'An agent always finishes faster',
+ 'An agent never makes mistakes',
+ 1,
+ 'The defining trait is the agentic loop: taking an action, observing the real result, and deciding the next step, repeated until the goal is met -- not model size or speed.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(108, '2026-06-30', 4, 'What is Apache License 2.0?',
+'A PERMISSIVE open-source license released by the Apache Software Foundation in 2004. "Permissive" means it lets you do almost anything with the code -- use it, modify it, distribute it, sell it, build proprietary closed-source products on top of it -- with very few strings attached. It is in the same family as the MIT and BSD licenses, but it is longer and more lawyer-grade because it spells out two things those shorter licenses leave implicit: PATENTS and ATTRIBUTION.
+
+WHAT YOU ARE ALLOWED TO DO: use the code commercially, modify it, distribute it, sublicense it, and include it in closed-source products. You do NOT have to open-source your own changes -- this is the key difference from COPYLEFT licenses like the GPL, which force downstream code to stay open.
+
+WHAT YOU MUST DO (the conditions, and they are light):
+- KEEP THE NOTICES. Preserve the copyright notice, the license text, and any NOTICE file when you redistribute.
+- STATE CHANGES. Mark the files you modified as having been changed.
+That is essentially the whole obligation.
+
+THE TWO FEATURES THAT MAKE APACHE 2.0 DISTINCT FROM MIT/BSD:
+- EXPLICIT PATENT GRANT. Every contributor automatically grants users a license to any patents their contribution relies on. So you cannot be sued for patent infringement merely for using the software as intended. The shorter licenses are silent on patents, which leaves legal ambiguity; Apache closes it.
+- PATENT RETALIATION CLAUSE. If you turn around and sue someone claiming the software infringes YOUR patent, your own patent license under Apache 2.0 terminates. A built-in "do not weaponize patents" deterrent.
+
+WHAT IT DOES NOT DO: it provides NO WARRANTY and accepts NO LIABILITY -- the software is given "as is." And again, it is NOT copyleft: nothing forces downstream users to share their modifications.
+
+A quick mental model: MIT says "do what you want, just keep my name on it." Apache 2.0 says the same thing PLUS "...and here is an explicit patent peace treaty so nobody gets ambushed in court." That patent clarity is exactly why many large companies and big projects -- Android, Kubernetes, Swift, and the Apache projects themselves -- prefer it.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (108, 'permissive license', 'An open-source license (Apache 2.0, MIT, BSD) that lets you use, modify, and redistribute code -- even in closed-source products -- with minimal conditions.'),
+  (108, 'copyleft', 'The opposite stance (e.g. the GPL): derivative works must be released under the same open license, forcing downstream code to stay open. Apache 2.0 is NOT copyleft.'),
+  (108, 'patent grant', 'A clause where contributors license the patents their code needs, so users cannot be sued for patent infringement for using the software as intended -- a headline feature of Apache 2.0.'),
+  (108, 'patent retaliation clause', 'Apache 2.0 terms that revoke your patent license if you sue another user claiming the software infringes your patent -- a deterrent against patent attacks.'),
+  (108, 'NOTICE file', 'A file Apache 2.0 requires you to preserve and pass along when redistributing, carrying required attributions and notices.'),
+  (108, 'as is / no warranty', 'The disclaimer that the software comes with no guarantees and the authors accept no liability for problems it causes.'),
+  (108, 'attribution', 'The requirement to keep the original copyright and license notices when you redistribute -- the light obligation common to permissive licenses.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(108, 'What is the main thing Apache License 2.0 adds that the shorter MIT license leaves unaddressed?',
+ 'It forces you to open-source any modifications you make',
+ 'An explicit patent grant (plus a retaliation clause) that protects users from patent suits',
+ 'It bans all commercial use of the code',
+ 'It requires you to pay a fee to the Apache Software Foundation',
+ 1,
+ 'Apache 2.0 is permissive like MIT, but its distinguishing feature is the explicit patent grant and retaliation clause. It does not force modifications open (that would be copyleft), and it allows commercial use freely.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(109, '2026-06-30', 5, 'What are standard coding licenses that help protect the creator of the project?',
+'First untangle what "protect the creator" actually means, because there are FOUR different protections and the license you pick depends on which ones you care about:
+1. LIABILITY / WARRANTY SHIELD -- "if my code breaks your stuff, you cannot sue me." Every mainstream open-source license includes an "as is, no warranty" disclaimer. This is the protection you almost certainly want, and you get it free in all of them.
+2. ATTRIBUTION -- "you must keep my name and notices on it." Also present in essentially all of them.
+3. PATENT PROTECTION -- "you cannot use my code and then turn around and sue me for patent infringement."
+4. ANTI-APPROPRIATION (COPYLEFT) -- "you cannot take my open code, make it proprietary, and lock it away." This protects your project''s openness, not your wallet.
+
+THE STANDARD LICENSES, ordered weakest-to-strongest in how much they constrain others on your behalf:
+- MIT (permissive) -- liability shield + requires attribution. Simplest and most popular. Silent on patents.
+- BSD, 2-clause or 3-clause (permissive) -- same as MIT; the 3-clause variant adds "do not use my name to endorse your derived product."
+- APACHE 2.0 (permissive) -- everything MIT gives, PLUS an explicit patent grant and a patent-retaliation clause. The strongest creator protection among permissive licenses, and the modern default for serious permissive projects.
+- MPL 2.0, Mozilla (weak copyleft) -- file-level: changes to YOUR files must stay open, but others may combine your code with proprietary code. A middle ground.
+- GPL / AGPL (strong copyleft) -- forces anyone who distributes derivatives to release their source too. AGPL additionally closes the "SaaS loophole," covering code run over a network. This protects your work from ever being taken proprietary.
+
+HOW TO CHOOSE:
+- "I just do not want to get sued; take my code freely" -> MIT (or BSD).
+- "Same, but I want patent safety too" -> APACHE 2.0.
+- "Nobody should be able to make a closed-source product out of my work" -> GPL, or AGPL for a network/server app.
+- "Somewhere in between" -> MPL 2.0.
+
+TWO CAVEATS THAT TRIP PEOPLE UP:
+- A license governs how others USE your code; it does NOT transfer copyright. You still need to actually OWN the copyright -- or have outside contributors sign a CLA (Contributor License Agreement) -- for the license to mean anything.
+- None of these protect a TRADEMARK (your project name or logo). That is a separate legal tool entirely.
+
+BOTTOM LINE: if "protect the creator" means shield me from liability and patent ambush while letting people use my work freely, the standard answer is APACHE 2.0. If it means stop people from privatizing my work, the standard answer is GPL / AGPL.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (109, 'warranty disclaimer ("as is")', 'The clause in every mainstream license that shields the author from liability if the code causes problems -- the protection most creators actually want.'),
+  (109, 'MIT license', 'The simplest, most popular permissive license: use it however you like, just keep the copyright/license notice. Silent on patents.'),
+  (109, 'BSD license', 'A permissive license like MIT; the 3-clause version adds a no-endorsement clause forbidding use of the author''s name to promote derivatives.'),
+  (109, 'MPL 2.0 (weak copyleft)', 'Mozilla''s file-level copyleft: modified files stay open, but the code can be combined with proprietary code -- a middle ground between MIT and GPL.'),
+  (109, 'GPL / AGPL (strong copyleft)', 'Licenses that force distributed derivatives to be open-sourced; AGPL extends this to software used over a network (the SaaS loophole).'),
+  (109, 'CLA (Contributor License Agreement)', 'An agreement outside contributors sign granting the project rights to their contributions, so the maintainer can license the combined work cleanly.'),
+  (109, 'trademark vs license', 'A license governs code use; a trademark protects a project''s name/logo. Separate legal tools -- a code license does not protect your brand.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(109, 'A creator wants people to use their code freely but wants protection from both lawsuits AND patent ambushes. Which standard license fits best?',
+ 'MIT, because it is the most popular',
+ 'Apache 2.0, because it adds an explicit patent grant and retaliation clause on top of a liability shield',
+ 'GPL, because it is the strongest license',
+ 'No license -- just post the code publicly',
+ 1,
+ 'All mainstream licenses give the liability shield, but only Apache 2.0 (among the common permissive ones) adds explicit patent protection. GPL is for preventing proprietary reuse, not for permissive sharing, and posting code with no license actually leaves it under default all-rights-reserved copyright.');
