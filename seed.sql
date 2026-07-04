@@ -3942,3 +3942,544 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'No license -- just post the code publicly',
  1,
  'All mainstream licenses give the liability shield, but only Apache 2.0 (among the common permissive ones) adds explicit patent protection. GPL is for preventing proprietary reuse, not for permissive sharing, and posting code with no license actually leaves it under default all-rights-reserved copyright.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(110, '2026-06-30', 6, 'What is a symlink?',
+'A SYMLINK (symbolic link) is a special file whose entire content is just A PATH to another file or directory. It is a pointer -- a signpost that says "the real thing is over there." When a program opens the symlink, the operating system transparently redirects it to the TARGET, so you use the symlink as if it WERE the target.
+
+You create one with ln -s:
+  ln -s /actual/target/file.txt shortcut.txt
+where /actual/target/file.txt is the target and shortcut.txt is the symlink you just made.
+
+A good mental image: it is like a desktop shortcut or Mac alias, but it lives at the FILESYSTEM level, so every program respects it automatically -- cd, cat, your editor, build tools all follow it without knowing or caring that it is a link.
+
+WHY THEY EXIST (real uses):
+- STABLE NAMES over changing targets. /usr/bin/python3 or a node symlink points at the real versioned binary (node -> node-22.3.0). You reference the stable name and swap what it points to underneath.
+- SHARING ONE FILE IN MANY PLACES without copying it. Package managers like pnpm lean on this hard: one real copy of a package on disk, symlinked into many projects, saving gigabytes.
+- PUTTING CONFIG WHERE A TOOL EXPECTS IT while the real file lives in a dotfiles repo (~/.zshrc -> ~/dotfiles/zshrc).
+
+THE THING THAT BITES PEOPLE -- SYMLINK vs HARD LINK:
+- A SYMLINK stores a PATH. If you delete or move the target, the symlink still exists but now points at nothing -- a DANGLING (broken) link. cat shortcut.txt then errors with "No such file or directory" even though the link is sitting right there.
+- A HARD LINK is a second NAME for the same underlying data (the same inode). Delete the original name and the data survives, because the hard link still references it directly. Hard links cannot cross filesystems or point to directories; symlinks can do both, which is why symlinks are far more common in everyday use.
+
+INSPECTING THEM: ls -l shows the arrow (shortcut.txt -> /actual/target/file.txt), and readlink shortcut.txt prints just the target path.
+
+One-sentence version: a symlink is a forwarding address, not a copy -- move the resident (the target) and your access bounces unless you update the address.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (110, 'symlink (symbolic link)', 'A file whose content is a path to another file/directory; opening it transparently redirects to the target. Created with ln -s.'),
+  (110, 'target', 'The actual file or directory a symlink points at. If it moves or is deleted, the symlink breaks.'),
+  (110, 'hard link', 'A second name for the same underlying data (same inode); the data survives as long as any hard link to it exists. Cannot cross filesystems or link directories.'),
+  (110, 'inode', 'The filesystem''s internal record for a file''s actual data and metadata; multiple hard-link names can point to one inode.'),
+  (110, 'dangling / broken link', 'A symlink whose target no longer exists, so following it errors even though the link file itself is still present.'),
+  (110, 'ln -s / readlink', 'ln -s creates a symlink; readlink prints the path a symlink points to; ls -l shows the link with an -> arrow.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(110, 'You create a symlink shortcut.txt pointing at /data/file.txt, then delete /data/file.txt. What happens to shortcut.txt?',
+ 'It is automatically deleted too',
+ 'It still exists but becomes a dangling (broken) link -- following it now errors',
+ 'It silently keeps a copy of the old contents',
+ 'It converts itself into a hard link to preserve the data',
+ 1,
+ 'A symlink only stores a path to its target. Deleting the target leaves the symlink in place but pointing at nothing, so reading it fails with "No such file or directory". A hard link would have preserved the data because it references the inode directly.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-02', 'qa', 'Attract mode -- the arcade cabinet performing for a room with no players');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(111, '2026-07-02', 1, 'In an arcade, what is attract mode?',
+'ATTRACT MODE is the looping demo an arcade cabinet plays while nobody is playing it. Left idle, the machine cycles through a self-running show: the title screen and logo, a gameplay demo where the CPU "plays" the game against itself, the high-score table, and flashing "INSERT COIN" / "PRESS START" prompts.
+
+Its entire job is right there in the name -- to ATTRACT a passerby. It shows a stranger what the game is, makes it look fun, and nudges them to drop a coin in. The instant you insert a coin or hit start, the cabinet drops OUT of attract mode and into the real game. When a game ends and the machine sits idle long enough, it falls back into attract mode and starts the pitch again.
+
+Some historical texture: the self-playing demo is also called a DEMO LOOP or "demo play," and it was often a scripted or recorded run rather than the AI genuinely playing -- just enough to look alive. Attract mode is why an arcade full of unplayed machines is still loud and animated: every cabinet is performing for a room that has not engaged yet.
+
+WHY IT MATTERS BEYOND ARCADES: "attract mode" has become a general UX term for ANY idle-but-selling state -- an interface that performs for an audience that has not interacted yet. A museum kiosk cycling promo screens, a smart-TV screen that demos features while parked on the home menu, a retail display running a product loop, even a landing-page hero that auto-plays a demo reel. All of these are attract mode: the screen working to convert a passive onlooker into an active user. The core pattern is "idle state as marketing," which is a deliberate design decision, not dead time.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (111, 'attract mode', 'The looping self-running demo an arcade cabinet plays while idle -- title, demo play, high scores, "insert coin" -- designed to lure a passerby into starting a game.'),
+  (111, 'demo loop / demo play', 'The segment of attract mode where the game appears to play itself, often a scripted or pre-recorded run rather than live AI, just to look alive and show off gameplay.'),
+  (111, 'idle state as UX pattern', 'The generalized idea behind attract mode: an unattended screen that actively markets the experience (kiosks, smart TVs, retail displays, auto-playing landing pages) instead of sitting blank.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(111, 'What is the primary purpose of attract mode on an arcade cabinet?',
+ 'To let the machine cool down between plays',
+ 'To pause the game so the current player can take a break',
+ 'To advertise the game and lure a passerby into inserting a coin while the machine sits idle',
+ 'To save the high scores to permanent storage',
+ 2,
+ 'Attract mode is the idle demo loop -- title, self-playing demo, high-score table, "insert coin" -- whose whole job is to attract a new player. Starting a game drops the cabinet out of attract mode.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(112, '2026-07-02', 2, 'What is scope creep?',
+'SCOPE CREEP is when the SCOPE of a project -- the set of things it is supposed to do -- quietly grows over time without a matching adjustment to the schedule, budget, or plan. It is the "while you are in there, can you also..." problem, accumulated one small ask at a time.
+
+Nobody ever decides "let us double this project." Instead it arrives in slivers:
+- A feature ships, and someone adds "just one more small thing."
+- An edge case turns into three edge cases turns into a whole subsystem.
+- A stakeholder assumes something was always included when it never was.
+- The builder GOLD-PLATES -- adds polish and refinement nobody asked for.
+
+Each individual addition feels tiny and reasonable. The danger is the AGGREGATE: the deadline was set for the ORIGINAL scope, but you are now building something meaningfully bigger, so you blow the estimate, burn out, or ship late. And often nobody can point to the single decision that caused it, because there was not one -- it was death by a thousand reasonable cuts.
+
+WHY IT IS THE VILLAIN THE CYUMMU LOOP FIGHTS: scope creep thrives on unstated, drifting understanding. Every "confirm your understanding matches my understanding" pins the scope down explicitly BEFORE work starts, so any addition has to be named as an addition ("that is new -- want me to fold it in?") rather than smuggled in as an assumption. A related discipline is the MVP (minimum viable product): deliberately defining the smallest thing worth shipping so you have a fixed line to defend against creep.
+
+The healthy response to a new request is not "always say no" -- it is CHANGE CONTROL: accept the new thing AND openly adjust the timeline or budget for it, instead of silently absorbing it into the original estimate.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (112, 'scope creep', 'The gradual, uncontrolled growth of a project''s requirements over time without matching adjustments to schedule or budget -- added one small "reasonable" request at a time.'),
+  (112, 'scope', 'The agreed-upon boundary of what is in vs. out of a project -- the definition of done that creep erodes.'),
+  (112, 'gold-plating', 'A flavor of scope creep where the builder adds unrequested refinements or polish nobody asked for.'),
+  (112, 'change control', 'The deliberate process of handling new requests -- accepting them AND adjusting timeline/budget -- instead of silently absorbing them into the original plan.'),
+  (112, 'MVP (minimum viable product)', 'The smallest version of a product that still delivers value; defining it gives you a fixed line to defend against scope creep.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(112, 'Which situation best describes scope creep?',
+ 'A single stakeholder formally cancels the project halfway through',
+ 'A steady stream of small, individually reasonable additions grows the project well past its original plan without adjusting the deadline',
+ 'The team finishes the agreed work early and ships ahead of schedule',
+ 'A bug is discovered in production and must be hotfixed',
+ 1,
+ 'Scope creep is the aggregate of many small unmanaged additions, each of which seems reasonable alone but collectively blows the original estimate because the schedule/budget was never adjusted to match.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(113, '2026-07-02', 3, 'Why might it seem wasteful to close Claude Code sessions that have cultivated massive context windows?',
+'The feeling is real, but it is mostly a SUNK-COST FALLACY wearing a productivity costume.
+
+WHY IT SEEMS WASTEFUL: A session running for hours feels like it has become an expert on your project. Over that window Claude has read dozens of files and "knows" the layout, absorbed your conventions and naming, built a shared vocabulary with you ("the engine," "the reader," "cyummu"), and followed a long thread of reasoning -- false starts, corrections, decisions. Closing the tab feels like firing an employee the day they finally learned where everything is. All that warm, PRIMED context is gone, and tomorrow you re-explain while Claude re-reads the same files. That re-ramp does cost real time, so the instinct is not crazy.
+
+WHY IT IS LARGELY A FALLACY: The catch is what "context" actually is. It is NOT learning -- the model did not get smarter or permanently absorb anything. It is just tokens sitting in a fixed-size window, and a giant window is a liability as much as an asset:
+- CONTEXT ROT / DILUTION -- as the window fills, the signal you care about now competes for attention with thousands of stale tokens (abandoned approaches, old file versions, dead ends). The model can start answering as if a superseded decision were still live.
+- COST AND LATENCY -- every new turn re-processes the whole window, so a massive context makes each response slower and more expensive for value that is mostly inert.
+- STALENESS -- files edited on disk since they were read are now wrong in the window; the context can actively mislead.
+So the "expertise" is partly an illusion: some genuinely useful priming, but a lot of ballast.
+
+THE RESOLUTION: The value was never supposed to live in the window -- it is supposed to live in DURABLE ARTIFACTS: commits, CLAUDE.md, a memory directory, transcript and devlogs, journal entries. The move is not "never close" -- it is HARVEST BEFORE YOU CLOSE. Commit the code, update the docs and memory, journal the open threads. Do that and closing is not waste; it is clearing ballast while keeping every durable thing, and a fresh session rereads the CURRENT files with none of the rot. The genuinely wasteful act is closing a big-context session WITHOUT harvesting it first -- that is the only case where real value actually evaporates.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (113, 'context window', 'The fixed-size token buffer holding everything in the current session; it is working memory for this conversation, not permanent learning the model carries forward.'),
+  (113, 'context rot', 'Degradation of output quality as a window fills with stale, contradictory, or irrelevant tokens that dilute the model''s attention away from what currently matters.'),
+  (113, 'sunk cost fallacy', 'Valuing something by what you have already invested in it rather than by its remaining usefulness -- the reason a bloated session feels too valuable to close.'),
+  (113, 'ephemeral vs durable state', 'The window is ephemeral (it dies with the session); files, commits, memory, and logs are durable (they survive it). Real value should be persisted to the durable layer.'),
+  (113, 'harvest before you close', 'The practice of extracting a session''s value into durable artifacts (commits, docs, memory, journal) before ending it, so closing clears ballast without losing anything.'),
+  (113, '/clear and /compact', 'Built-in Claude Code moves to reset or summarize a bloated context window without losing the working thread.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(113, 'Why is the instinct that closing a large-context Claude session is "wasteful" mostly a fallacy?',
+ 'Because context windows never fill up, so size is irrelevant',
+ 'Because the context is ephemeral working memory, not permanent learning -- and large windows suffer rot, cost, and staleness; the real value belongs in durable artifacts',
+ 'Because Claude permanently remembers everything from every past session anyway',
+ 'Because re-reading files in a new session is impossible, so nothing is lost',
+ 1,
+ 'The window is fixed-size working memory, not learning the model keeps. Big windows dilute attention, cost more per turn, and go stale. Persist the value to durable artifacts (commits, docs, memory, logs) and closing clears ballast rather than destroying value.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(114, '2026-07-02', 4, 'Why might a Flutter app that is a 4x4 grid (each cell with a timer) plus randomly placed, randomly jittering floating modals cause the entire screen to periodically go black?',
+'The "goes black" symptom is loud and specific, and in Flutter it points at one of two very different failure families. The fix depends on which one you have.
+
+MOST LIKELY: THE "MODALS" ARE REAL MODAL ROUTES AND YOU ARE SEEING THE BARRIER.
+If the floating things are made with showDialog / showModalBottomSheet / showGeneralDialog (or any PageRoute with a barrierColor), each one inserts a MODAL BARRIER -- a full-screen scrim that defaults to Colors.black54 (54% opaque black). That scrim is literally a black overlay covering the whole screen. Now stack that on this setup: modals "randomly placed, randomly jittering" implies they are being pushed and popped rapidly. Every push lays another black-ish barrier over the ENTIRE screen; two or three overlapping black54 barriers composite toward fully opaque black (0.46^3 transmitted, ~90% black). If a barrier is pushed but its pop is missed (a leaked route, or jitter re-pushing faster than it pops), the screen STAYS dark; if they flap, it FLASHES black periodically. That single fact -- the barrier is black by design -- explains "the entire screen goes black" more cleanly than anything else. Check first: are these actual routes/dialogs, or just positioned widgets in a Stack? If routes, that is almost certainly it. Fix: use Positioned widgets in a Stack (or Overlay/OverlayEntry) for ambient floating UI, or at minimum barrierColor: Colors.transparent.
+
+THE OTHER FAMILY: THE RENDER PIPELINE STALLS SO HARD THE COMPOSITOR PRESENTS EMPTY (BLACK) FRAMES.
+Flutter runs two threads: the UI THREAD builds/lays out widgets; the RASTER (GPU) THREAD paints and presents them. Each has a ~16.6 ms budget at 60 fps. Blow it and you get jank -- and in severe cases a frame with nothing to present shows as black. With 16 cell timers plus N jittering modals, something animates every frame, continuously. Ways it blows the budget:
+- TIMER / TICKER / ANIMATIONCONTROLLER LEAKS (the classic). If each cell timer or each modal jitter animation is not cancelled/disposed in dispose(), they accumulate. Recreated modals keep spawning new Timer.periodic and AnimationController objects that never die. Flutter often warns of a "ticker leak"; the runtime effect is CPU saturation -> UI thread stalls -> dropped/black frames. This gets WORSE over time, matching "periodically."
+- setState AT THE WRONG ALTITUDE. A timer calling setState on a big ancestor 16x/sec rebuilds and repaints far more of the tree than changed.
+- OVERDRAW + EXPENSIVE COMPOSITING. Translucent modals with shadows, BackdropFilter blur, or Opacity force saveLayer / offscreen compositing; many overlapping translucent layers overload the raster thread.
+- MEMORY PRESSURE -> GPU SURFACE LOSS. Allocating fresh objects every tick spikes garbage collection; on weak devices the EGL/GPU surface can be lost and recreated, and during that gap the screen is black.
+
+HOW TO TELL THEM APART: turn on showPerformanceOverlay (or DevTools Performance) -- red raster/UI bars during blackouts means the pipeline. Watch the console for a ticker/Timer leak warning and audit every dispose(). Grep for showDialog / barrierColor -- if present, suspect the barrier first. Wrap each animating cell/modal in a RepaintBoundary so constant repaints do not invalidate the whole screen. Best bet given the exact words "entire screen goes black" plus "modals": it is the modal barrier scrim; the pipeline explanation is the backup if they turn out to be plain Stack children.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (114, 'UI thread vs raster thread', 'Flutter splits work: the UI (Dart) thread builds and lays out widgets; the raster/GPU thread paints and presents them. Either one missing its frame budget causes jank.'),
+  (114, 'modal barrier / scrim', 'The full-screen ModalBarrier a dialog or modal route inserts behind itself, defaulting to Colors.black54; overlapping barriers composite toward solid black -- a direct cause of a black screen.'),
+  (114, 'ticker / AnimationController leak', 'An animation driver not disposed in dispose(), so it keeps firing forever; accumulation saturates the CPU and stalls the UI thread. Flutter warns about leaked tickers.'),
+  (114, 'Timer.periodic leak', 'A repeating timer never cancel()-ed in dispose(); many accumulating timers hammer the CPU the same way ticker leaks do.'),
+  (114, 'overdraw', 'Painting the same pixels many times via stacked translucent layers; expensive work on the raster thread and a common source of dropped frames.'),
+  (114, 'saveLayer / offscreen compositing', 'What Opacity, BackdropFilter, and shadows trigger -- an offscreen buffer that is costly to allocate and blend; a frequent jank source.'),
+  (114, 'RepaintBoundary', 'A widget that isolates a subtree so its constant repaints do not dirty (invalidate) the rest of the screen.'),
+  (114, 'frame budget', 'The ~16.6 ms per frame available at 60 fps; the deadline both the UI and raster threads must hit or the frame is dropped.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(114, 'If the "floating modals" are created with showDialog, what is the single most direct reason the whole screen could go black?',
+ 'Dialogs disable the GPU while open',
+ 'Each modal route inserts a full-screen ModalBarrier scrim that defaults to Colors.black54, and overlapping/stuck barriers composite toward solid black',
+ 'showDialog always sets the app background to black',
+ 'Flutter cannot render a grid and a dialog at the same time',
+ 1,
+ 'A modal route places a ModalBarrier over the entire screen, black54 by default. Rapidly pushed/popped or leaked barriers stack and composite toward opaque black, which reads as the whole screen going (or flashing) black -- distinct from pipeline stalls that present empty frames.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-04', 'qa', 'Made with, not made by -- prompting as the next rung on the abstraction ladder');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(115, '2026-07-04', 1, 'What is the correct way to discuss making things with AI? I am "making" software by prompting AI, but it does not feel like coding.',
+'The discomfort is real and worth taking apart, because it comes from conflating two words that were never synonyms: CODING and MAKING SOFTWARE.
+
+CODING is one implementation technique -- hand-writing instructions in a formal language. MAKING SOFTWARE is the whole job: deciding what should exist, specifying its behavior precisely, judging whether what got built is right, and owning it when it ships. Coding has always been just one layer of that stack, and it is the layer that has been getting automated away for seventy years.
+
+THE ABSTRACTION LADDER. Every generation of tooling triggered exactly this feeling in the previous one. Assembly programmers said compilers were not real programming (you did not allocate the registers). C programmers said it about garbage-collected languages (you do not manage memory). Hand-rolled-everything web devs said it about frameworks. Prompting is the next rung: you now specify behavior in natural language and review the machine''s translation, instead of specifying it in Python and reviewing the compiler''s translation. What stays constant across every rung is the actual hard part: SPECIFICATION (saying precisely what you want -- vague in, wrong out), VERIFICATION (knowing whether what came back is actually correct rather than merely plausible), and ACCOUNTABILITY (it shipped under your name). Those never moved. They are the job.
+
+WHY IT DOES NOT FEEL LIKE CODING. Two reasons. First: it is not coding, and that is fine -- it is closer to being an editor, a tech lead, or a director. Your work product is judgment, not keystrokes. Second: the EFFORT HEURISTIC. Humans use felt struggle as a proxy for legitimacy, and syntax-wrestling burns in a way that reviewing a diff does not, so the new work registers as "not real" even when it produces more and better software. But the struggle was never the point; the software was the point. And note: if prompting were nothing, everyone''s AI output would be equally good. It is not. Decomposing problems, catching wrong output, and knowing what good looks like are skills with a huge spread between people -- and they are the ones that compound now.
+
+THE CORRECT WAY TO DISCUSS IT -- two rules:
+1. MADE WITH, NOT MADE BY. Say "I built this with Claude." Honest in both directions. You direct, review, verify, and own the result. If it breaks in production, "the AI wrote it" is not a defense -- and the fact that the accountability stays with you is precisely why the making is really yours.
+2. SHOW THE PROCESS. The two failure modes of AI discourse are OVERCLAIMING (hiding the AI, performing hand-wrought authorship -- dishonest, and increasingly transparent to everyone) and UNDERCLAIMING ("the AI did everything" -- which erases your actual contribution and teaches your audience nothing). The correct lane is process-honest: what you asked for, what came back wrong, how you verified, what you rejected. That is also the only interesting content. Nobody learns anything from "AI made this"; they learn from watching the loop.
+
+THE REFRAME: the coding keeps getting cheaper. Reading code you did not write, specifying precisely, and verifying ruthlessly get more valuable every month. "It does not feel like coding" is accurate. It feels like the part of the job that was always above coding.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (115, 'abstraction ladder', 'The historical stack of tooling layers (assembly -> compilers -> high-level languages -> frameworks -> AI prompting), where each new rung is dismissed as "not real programming" by the rung below it.'),
+  (115, 'specification', 'Saying precisely what you want built. The genuinely hard part of software, and it is identical work whether the target reading it is a compiler or a model -- vague in, wrong out.'),
+  (115, 'verification', 'Confirming that output is actually correct rather than merely plausible. As generation gets cheap, this replaces typing as the bottleneck skill.'),
+  (115, 'effort heuristic', 'The cognitive bias of using felt struggle as a proxy for value or legitimacy -- the reason low-friction work registers as "cheating" even when its results are better.'),
+  (115, 'made with, not made by', 'The honest attribution frame for AI-assisted work: the AI drafts, the human directs, reviews, verifies, and owns what ships.'),
+  (115, 'overclaiming vs underclaiming', 'The two dishonest poles of AI discourse -- hiding the AI entirely, or crediting it with everything. Both misrepresent where the judgment actually lives.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(115, 'Across every jump up the abstraction ladder -- assembly to compilers to high-level languages to AI prompting -- what stays constant as the actual job of making software?',
+ 'Typing speed and memorized syntax',
+ 'Specification, verification, and accountability for what ships',
+ 'Manual control of registers and memory',
+ 'Nothing -- each new layer replaces the entire job',
+ 1,
+ 'Each rung automates the translation layer below it, but saying precisely what you want, confirming what came back is correct, and owning the shipped result never move. That is why prompting an AI is still making software even though it is not coding.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(116, '2026-07-04', 2, 'A book says public-key encryption might involve transmitting ciphertext C = P_A(M). How do I read that, and what is the correct nomenclature in the context of number-theoretic algorithms?',
+'Read it aloud as "C equals P-sub-A of M." This is the CLRS-style formalism (Introduction to Algorithms, ch. 31, Number-Theoretic Algorithms), and every piece has a name.
+
+THE PIECES:
+- M is the PLAINTEXT -- the message you want to send.
+- C is the CIPHERTEXT -- the scrambled result you actually transmit.
+- P_A is the PUBLIC KEY OF PARTICIPANT A (usually Alice). The subscript is not math being done to P; it is an INDEX saying whose key this is. P_B would be Bob''s public key.
+- P_A(M) is ordinary FUNCTION APPLICATION, exactly like f(x).
+
+The load-bearing idea is that the book treats a key not as a number but as a FUNCTION -- something you apply to a message. So the equation reads: "the ciphertext C is produced by applying Alice''s public-key function to the message M." Anyone can compute it, because P_A is public. That is the whole point of a public-key system.
+
+THE OTHER HALF OF THE FORMALISM: each participant has a KEY PAIR (P_A, S_A) -- public and secret -- and the two functions are INVERSES of each other over D, the set of permissible messages:
+- S_A(P_A(M)) = M -- decryption undoes encryption; only Alice can do this because only she holds S_A.
+- P_A(S_A(M)) = M -- the reverse order also works, which is what makes DIGITAL SIGNATURES possible: Alice signs with S_A, anyone verifies with P_A.
+
+THE CORRECT NOMENCLATURE:
+- P_A and S_A form a family of functions INDEXED BY PARTICIPANT. You say "P sub A" or "A''s public-key function."
+- Formally each is a PERMUTATION of D -- a one-to-one, onto mapping of the message set to itself, so nothing is lost and it can be undone.
+- P_A is a TRAPDOOR ONE-WAY FUNCTION: easy to compute forward, computationally infeasible to invert -- unless you hold the trapdoor, which is exactly what the secret key S_A is.
+- The inverse relationship is FUNCTION COMPOSITION: S_A composed with P_A is the identity on D.
+
+In RSA, the concrete instance the book builds next, these abstract functions become modular arithmetic: P_A(M) = M^e mod n and S_A(C) = C^d mod n, and the pair works because e*d = 1 (mod phi(n)) -- which is where the "number-theoretic" part earns its name.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (116, 'plaintext / ciphertext', 'The message before encryption (M) and after (C). The ciphertext is what actually crosses the wire.'),
+  (116, 'key pair (P_A, S_A)', 'A participant''s public and secret keys, treated as a pair of functions that are inverses of each other over the message set D.'),
+  (116, 'subscript as index', 'In P_A, the subscript is not an operation -- it labels ownership. P_A and P_B are different members of the same family of functions, indexed by participant.'),
+  (116, 'function application', 'The f(x) pattern: P_A(M) means "apply the function P_A to the input M." Keys in this formalism are functions, not numbers.'),
+  (116, 'trapdoor one-way function', 'A function easy to compute forward but infeasible to invert -- except with a secret (the trapdoor). The secret key S_A is the trapdoor for P_A.'),
+  (116, 'permutation (of a set)', 'A one-to-one, onto mapping of a set to itself. Encryption must be a permutation of D so that no two messages collide and decryption can undo it.'),
+  (116, 'inverse functions / composition', 'S_A(P_A(M)) = M means composing the two functions yields the identity -- each undoes the other, in either order.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(116, 'In the expression C = P_A(M), what does the subscript A denote?',
+ 'The message M raised to the power A',
+ 'Which participant owns the key -- P_A is A''s public-key function, applied to M like f(x)',
+ 'The number of times the encryption is repeated',
+ 'A constant multiplied against P before encryption',
+ 1,
+ 'The subscript is an index, not an operation: it labels whose key the function is. P_A and S_A are A''s public and secret key functions, inverses of each other over the message set D, and P_A(M) is plain function application producing the ciphertext.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(117, '2026-07-04', 3, 'In a phrase like "on the nature of ____", what is the underscore called? And what is the X when we say "I read book X"?',
+'THE UNDERSCORE IS A PLACEHOLDER -- a visible mark that holds open a SLOT in a TEMPLATE. "On the nature of ____" is not a sentence yet; it is a SCHEMA, a reusable pattern with a hole in it. The underscore says "something goes here, and I am deliberately not saying what." When you fill the slot ("On the Nature of Things"), the formal verb is that you INSTANTIATE the template. Read it aloud as "on the nature of blank."
+
+THE X IS A VARIABLE -- the same idea as x in algebra, but ranging over books instead of numbers. Because it is used to talk ABOUT statements ("whenever someone says I read book X..."), the precise term is a METAVARIABLE (logicians also say SCHEMATIC LETTER): a symbol standing in for whatever expression would fill that position.
+
+The underscore and the X are the same device in different clothes. The blank shows the slot visually; the letter NAMES the slot so you can refer to it or repeat it. "X is the new Y" needs two named slots -- "____ is the new ____" cannot tell you whether the two blanks must match.
+
+RELATED NOMENCLATURE:
+- CLOZE -- the education/psycholinguistics term for a fill-in-the-blank sentence; "cloze deletion" is what Anki flashcards call it.
+- SNOWCLONE -- a phrasal template reused culturally with different fillers: "X is the new Y," "the mother of all X," and arguably "On the Nature of ____" itself, since philosophy-flavored titles riff on Lucretius''s De Rerum Natura (On the Nature of Things).
+- METASYNTACTIC VARIABLE -- programming culture''s placeholder names: foo, bar, baz. Same job as X, but the names themselves conventionally signal "this is filler."
+
+This connects directly to reading C = P_A(M): the A in P_A is doing exactly this job -- a variable holding a slot open for SOME participant, so a book can state facts about EVERY key pair at once. Placeholders are how you talk about the pattern instead of one instance of it.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (117, 'placeholder', 'Any mark (blank, underscore, letter) that holds open a position in an expression where a real value or phrase will later go.'),
+  (117, 'template / schema', 'A reusable pattern containing one or more open slots; not a complete statement until the slots are filled.'),
+  (117, 'instantiate', 'To fill a template''s slots with concrete values, turning the pattern into a specific instance.'),
+  (117, 'variable / metavariable', 'A named placeholder (X, Y) that ranges over possible fillers; called a metavariable or schematic letter when it stands in for expressions in talk about language or logic.'),
+  (117, 'cloze', 'The linguistics/education term for a fill-in-the-blank sentence, as in cloze tests and Anki cloze deletions.'),
+  (117, 'snowclone', 'A culturally reused phrasal template with swappable fillers, e.g. "X is the new Y."'),
+  (117, 'metasyntactic variable', 'Conventional placeholder names in programming (foo, bar, baz) whose very names signal that they are filler.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(117, 'What is the key advantage of writing a placeholder as a named letter ("X is the new Y") instead of a blank ("____ is the new ____")?',
+ 'Letters are more formal and therefore more correct',
+ 'A named slot can be referred to and repeated, so the template can express whether two positions must hold the same filler or different ones',
+ 'Blanks are only allowed in children''s worksheets',
+ 'A letter placeholder changes the sentence''s grammatical tense',
+ 1,
+ 'Both marks hold a slot open, but only a name lets you talk about the slot: repeat X to force the same filler, or use X and Y to allow different ones. Bare blanks cannot encode that relationship -- which is why math, logic, and books about algorithms use lettered variables.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(118, '2026-07-04', 4, 'If someone says they "read" a book but actually listened to the audiobook, neither claim feels wrong -- but on the nature of truth, is it always pretentious to say "you did not READ it"?',
+'No, it is not always pretentious -- and the reason why dissolves the whole puzzle. The argument feels unresolvable because it is not actually a disagreement about facts. It is a VERBAL DISPUTE: two people using the same word in two different senses and mistaking that for a factual conflict.
+
+"Read" is POLYSEMOUS -- it carries multiple related senses. Through SEMANTIC BROADENING it has acquired a loose sense, "consumed the content of the book," alongside its strict sense, "took in the text visually." Under the loose sense "I read Dune" is TRUE of the audiobook listener. Under the strict sense it is FALSE. Both parties can be right simultaneously because their claims have different TRUTH CONDITIONS. Nothing about truth itself is threatened; the sentence just has not settled which proposition it expresses until the sense is fixed.
+
+The deeper structure is the TYPE-TOKEN DISTINCTION. "The book" is ambiguous between the WORK -- the abstract text, the type, identical across hardcover, ebook, and audiobook -- and the COPY -- the physical token in your hands. The loose sense of "read" is about the type; the strict sense involves a specific kind of encounter with a token. Notice what happened in the described conversation: it ran fine while both people were discussing the work, and broke exactly at the moment one person referenced a unique feature of the PHYSICAL COPY. That shifted the referent from type to token, and the listener''s claim -- true at the type level -- could no longer support it.
+
+That breakage is the honest test for when the correction is legitimate. A distinction is PEDANTIC when it does no work in the conversation, and PRECISE when it does. Grice''s cooperative principle (specifically the maxim of relation) says speakers include what is relevant and omit what is not: in most conversations the medium is irrelevant, so "I read it" is perfectly cooperative shorthand and correcting it is pure status-play -- enforcing a distinction that changes nothing. But the moment the conversation turns on the medium -- typography, a map on the endpapers, marginalia, how a footnote sits on the page, or even the distinct cognitive experiences of eye versus ear -- the distinction becomes LOAD-BEARING, and drawing it is not pretension. It is repairing an EQUIVOCATION so the conversation can proceed truthfully.
+
+So the rule: pretentiousness is not a property of the distinction; it is a property of whether the distinction is doing work. "You did not READ it" is obnoxious as a flex and correct as a repair -- and the audiobook conversation described here is the textbook case of the repair.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (118, 'verbal dispute', 'An apparent disagreement that is really two parties using the same word in different senses; dissolves once the senses are distinguished, because no fact is actually in contention.'),
+  (118, 'polysemy', 'One word carrying multiple related senses, e.g. "read" as "visually took in text" versus "consumed the content of a book."'),
+  (118, 'semantic broadening', 'A word''s meaning widening over time to cover more cases -- how "read" stretched to include audiobooks.'),
+  (118, 'type-token distinction', 'The difference between an abstract kind (the work, the text of Dune) and its concrete instances (this hardcover, that audio file). "The book" is ambiguous between the two.'),
+  (118, 'truth conditions', 'What the world must be like for a statement to be true. A sentence with an unresolved word sense has unsettled truth conditions -- which is how "I read it" can be both true and false.'),
+  (118, 'equivocation', 'Letting a word silently shift senses mid-argument; the repair is naming the two senses explicitly.'),
+  (118, 'maxim of relation (Grice)', 'The conversational norm of saying what is relevant; it explains why loose talk is cooperative when the medium does not matter, and why precision becomes required the moment it does.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(118, 'Someone says "I read Dune" (they listened to the audiobook). When does correcting them to "you LISTENED to it" stop being pedantic and become legitimate precision?',
+ 'Whenever strict dictionary accuracy is at stake, which is always',
+ 'When the distinction becomes load-bearing in the conversation -- e.g. the discussion turns on features of the physical text -- so the correction repairs an equivocation rather than scoring status',
+ 'Never; language change has made the two verbs fully interchangeable in every context',
+ 'Only when the correcter has read the physical copy themselves',
+ 1,
+ 'The dispute is verbal: "read" has a loose sense (consumed the work) and a strict sense (visually took in the text), true and false respectively for a listener. Correction is pedantry when the distinction does no work, and precision when the conversation actually depends on it -- like referencing a unique feature of the physical copy.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(119, '2026-07-04', 5, 'Who said that the writing system would be the death of memory / the end of an era?',
+'That is PLATO -- specifically Socrates in the dialogue PHAEDRUS (~370 BC), and the attribution is layered in a way worth getting right.
+
+THE PASSAGE: Socrates tells a myth about the Egyptian god THEUTH (Thoth), the inventor of writing, presenting his invention to KING THAMUS. Theuth pitches writing as "a recipe for memory and wisdom." Thamus rejects the pitch: "This discovery of yours will create FORGETFULNESS in the learners'' souls, because they will not use their memories; they will trust to the external written characters and not remember of themselves... you give your disciples not truth, but only the SEMBLANCE of truth; they will be hearers of many things and will have learned nothing."
+
+WHO ACTUALLY SAID IT: the judgment belongs to Thamus, a character in a myth told by Socrates, written down by Plato. Socrates himself famously wrote nothing -- everything we have of him is Plato''s writing. Which lands the famous irony: the argument that writing kills memory only survived because someone wrote it down.
+
+TWO PIECES OF NOMENCLATURE THAT TRAVEL WITH THE PASSAGE:
+- PHARMAKON -- the Greek word for Theuth''s invention, meaning both REMEDY and POISON. Derrida built a whole essay ("Plato''s Pharmacy") on the ambiguity: writing is pitched as a memory-cure and diagnosed as a memory-poison, and the word refuses to pick a side.
+- Thamus''s actual distinction: writing aids REMINDING (hypomnesis -- external marks that point you back to knowledge) but not MEMORY (mneme -- knowledge held in the soul). Learners get "the semblance of wisdom, not the reality."
+
+WHY IT KEEPS COMING UP: this is the original instance of an argument that recurs with every cognitive technology -- writing, printing, calculators, Google, now AI. The claim is always the same: EXTERNALIZING THE FACULTY DESTROYS IT. The track record is more interesting than either side admits: the faculty really does atrophy in its old form (nobody recites the Iliad from memory anymore), AND the offloading buys a ceiling the unaided faculty could never reach. Both halves are true simultaneously -- which is exactly what pharmakon was flagging 2,400 years ago.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (119, 'Phaedrus', 'The Platonic dialogue (~370 BC) containing Socrates''s myth of Theuth and Thamus -- the classic source for the "writing will destroy memory" argument.'),
+  (119, 'Theuth and Thamus', 'The Egyptian inventor-god who pitches writing as a recipe for memory, and the king who rejects it as a recipe for forgetfulness -- the two voices of the myth.'),
+  (119, 'pharmakon', 'Greek for both remedy and poison; the word used for writing in the Phaedrus, capturing that a cognitive technology can cure and damage the same faculty at once.'),
+  (119, 'hypomnesis vs mneme', 'Reminding versus remembering: external marks that point you back to knowledge, versus knowledge actually held in the mind. Thamus grants writing the first and denies it the second.'),
+  (119, 'cognitive offloading', 'Delegating a mental faculty to an external tool (writing, calculators, search, AI); the recurring modern subject of the Thamus argument.'),
+  (119, 'oral tradition', 'The memory-based transmission culture (recited epics, mnemonic verse) whose decline is exactly the atrophy Thamus predicted -- and the price paid for what literacy unlocked.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(119, 'In Plato''s Phaedrus, who actually delivers the judgment that writing will produce forgetfulness rather than memory?',
+ 'Socrates, speaking in his own voice as settled doctrine',
+ 'King Thamus, inside a myth Socrates tells about the god Theuth presenting his invention -- as recorded in writing by Plato',
+ 'Aristotle, reviewing Plato''s dialogues',
+ 'Theuth himself, warning about his own invention',
+ 1,
+ 'The attribution is three layers deep: Thamus says it, in a myth told by Socrates, preserved only because Plato wrote it down -- Socrates himself wrote nothing. The layering is the point: the anti-writing argument survives exclusively as writing.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(120, '2026-07-04', 6, 'Who are the creator, destroyer, and maintainer in the Hindu Trimurti?',
+'The TRIMURTI ("three forms" in Sanskrit) assigns the three cosmic functions to three deities:
+
+- BRAHMA -- THE CREATOR (srishti). Brings the universe into being at the start of each cosmic cycle. Distinct from BRAHMAN (the impersonal ultimate reality) and from BRAHMINS (the priestly class) -- three commonly confused words.
+- VISHNU -- THE MAINTAINER / PRESERVER (sthiti). Sustains the cosmic order (dharma), and descends into the world as AVATARS -- Rama and Krishna being the most famous -- whenever that order is threatened.
+- SHIVA -- THE DESTROYER (samhara). "Destroyer" deserves a footnote: it is dissolution that clears the way for the next creation, closer to TRANSFORMATION than annihilation. Shiva as NATARAJA (lord of the dance) dances the universe to its end so the cycle can begin again.
+
+THE STRUCTURE IS THE POINT: the cosmology is CYCLICAL, not linear -- create, sustain, dissolve, repeat, forever. Destruction is a maintenance function of the universe, not a failure state.
+
+A curious cultural asymmetry falls out of it: Vishnu and Shiva each anchor massive living devotional traditions (VAISHNAVISM and SHAIVISM), while Brahma has almost no temples dedicated to him (Pushkar being the famous exception). Creation is a job already done until the next cycle -- nobody petitions the creator.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (120, 'Trimurti', 'Sanskrit for "three forms": the grouping of Brahma, Vishnu, and Shiva as the creator, preserver, and destroyer functions of the cosmos.'),
+  (120, 'Brahma vs Brahman vs Brahmin', 'Three commonly confused words: the creator deity, the impersonal ultimate reality of Hindu philosophy, and the priestly social class.'),
+  (120, 'avatar', 'A descent or incarnation of a deity into the world -- classically Vishnu''s (Rama, Krishna). The source of the modern tech usage for an in-world representation of a user.'),
+  (120, 'srishti / sthiti / samhara', 'The three phases of the cosmic cycle: creation, sustenance, and dissolution -- the functions the Trimurti personifies.'),
+  (120, 'Nataraja', 'Shiva as lord of the dance, whose cosmic dance dissolves the universe at the end of each cycle so creation can begin again.'),
+  (120, 'cyclical cosmology', 'A universe model of endless create-sustain-dissolve cycles rather than a single linear beginning and end; frames destruction as maintenance, not failure.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(120, 'In the Hindu Trimurti, which deity holds which cosmic function?',
+ 'Brahma destroys, Vishnu creates, Shiva preserves',
+ 'Brahma creates, Vishnu preserves/maintains, Shiva destroys (dissolves for the next cycle)',
+ 'Vishnu creates, Shiva preserves, Brahma destroys',
+ 'Shiva creates, Brahma preserves, Vishnu destroys',
+ 1,
+ 'Brahma is the creator (srishti), Vishnu the preserver of cosmic order (sthiti) who descends as avatars, and Shiva the destroyer (samhara) -- where destruction means the dissolution that clears the way for the next cycle of a cyclical cosmology.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(121, '2026-07-04', 7, 'Does "epoiesen" in Greek mean "to create"?',
+'Close -- it is a form of the verb "to make," and the exact form matters.
+
+THE WORD IS epoiEsen (Greek: epsilon-pi-omicron-iota-eta-sigma-epsilon-nu). It is not the dictionary form "to create"; it is a fully conjugated form meaning "HE/SHE/IT MADE": third person singular, AORIST tense (Greek''s simple past -- done, completed, once) of the verb POIEO, "to make, to do, to produce."
+
+WHERE IT SHOWS UP -- two signature uses make it one of the most famous single words in Greek:
+- ARTIST SIGNATURES. Greek potters and sculptors signed work "Exekias epoiesen" -- "Exekias MADE [this]." The maker''s mark, 2,500 years before "shipped it." Painters used a different verb -- "egrapsen," drew/painted it -- so the Greeks even distinguished making the pot from decorating it.
+- THE SEPTUAGINT''S GENESIS 1:1. "En arche epoiesen ho theos ton ouranon kai ten gen" -- "In the beginning God MADE the heaven and the earth." The same everyday verb a potter used, applied to the universe.
+
+DOES IT MEAN "CREATE"? The verb poieo covers the whole territory English splits between DO, MAKE, and CREATE. Greek did not fence off a special elevated verb for creation; making a pot and making a cosmos take the same word.
+
+THE ROOT HIDING IN ENGLISH: poietes -- "maker" -- is where POET comes from. To the Greeks a poet was literally A MAKER (of verses), which is why poetry, POIESIS (the philosophical term for bringing-into-being), and even ONOMATOPOEIA ("name-making") share the root. The oldest word Western culture has for creative work does not distinguish between kinds of making at all.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (121, 'poieo', 'The Greek verb covering "do," "make," and "create" -- one undivided verb for the territory English splits into three.'),
+  (121, 'epoiesen', 'Third person singular aorist of poieo: "he/she/it made." Famous from artist signatures ("Exekias epoiesen") and Genesis 1:1 in the Septuagint.'),
+  (121, 'aorist', 'The Greek simple-past tense marking a completed, one-time action -- "made," not "was making."'),
+  (121, 'epoiesen vs egrapsen', 'The two Greek vase-signature verbs: "made it" (the potter) versus "drew/painted it" (the painter) -- credit split by craft.'),
+  (121, 'poietes / poiesis', '"Maker" -- the root of POET and POETRY; poiesis is the philosophical term for bringing something into being.'),
+  (121, 'Septuagint', 'The ancient Greek translation of the Hebrew Bible (~3rd-2nd c. BC), source of the famous "epoiesen" in Genesis 1:1.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(121, 'What exactly does the Greek word "epoiesen" mean?',
+ 'The infinitive "to create," as in a dictionary entry',
+ '"He/she/it made" -- third person singular aorist (completed past) of poieo, the verb covering do/make/create',
+ 'A noun meaning "the creation"',
+ 'A command meaning "make this!"',
+ 1,
+ 'Epoiesen is a conjugated form, not the infinitive: aorist third singular of poieo. It is the verb of the vase signature "Exekias epoiesen" (Exekias made this) and of Genesis 1:1 in the Septuagint -- and its root poietes ("maker") is where the word "poet" comes from.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(122, '2026-07-04', 8, 'Does "bara" in Hebrew mean "to create"? And do bara and epoiesen have different ontological groundings -- one creation from nothing, the other poised for making?',
+'YES, BARA MEANS "TO CREATE" -- it is the verb of Genesis 1:1, "Bereshit bara Elohim." But its distinguishing feature is not the dictionary gloss; it is THE GRAMMAR OF WHO GETS TO USE IT. In its basic (Qal) stem, bara occurs ~48 times in the Hebrew Bible and GOD IS THE ONLY SUBJECT IT EVER TAKES. Humans never bara. Humans ASAH (make/do), YATSAR (form -- the potter''s verb), or BANAH (build). Isaiah 43:7 runs all three in one verse: "whom I created (bara), formed (yatsar), and made (asah)." Where Greek uses one undivided verb (poieo) for potter and cosmos alike, Hebrew fences off a verb exclusively for divine action. Bara also never names its material -- "bara out of X" does not occur.
+
+THE ONTOLOGICAL COMPARISON -- the instinct is right, but the mechanism is different than usually told. The common claim is "bara = create from nothing, poieo = craft from material." The honest version: THE WORDS THEMSELVES DO NOT ENCODE THAT; THEIR USAGE PATTERNS DO, and the ex nihilo doctrine came later.
+
+- BARA DOES NOT LEXICALLY MEAN "FROM NOTHING." Genesis 1:2 has pre-existing stuff sitting right there -- TOHU VABOHU (formless void), darkness, waters. The text reads at least as naturally as God ORDERING CHAOS as creating from nothing; the JPS translation even renders 1:1 as a dependent clause: "When God began to create..."
+- CREATIO EX NIHILO as an explicit doctrine first surfaces around 2 Maccabees 7:28 ("God did not make them out of things that existed") and hardens into formal doctrine in the 2nd century AD -- argued AGAINST the Greek position.
+- THE GREEK POSITION IS THE REAL CONTRAST: in Plato''s Timaeus, matter is ETERNAL, and the DEMIURGE (literally "craftsman") shapes pre-existing chaos after the Forms. Poieo is exactly that -- demiurgic craft language, continuous with human making.
+- THE KICKER: when the Septuagint translated bara, it used EPOIESEN. The reserved divine verb got flattened into the common craft verb. That translation loss is why the ontological fight (eternal matter vs. ex nihilo) later had to be fought explicitly -- the Greek text could no longer carry the distinction the Hebrew grammar had been quietly enforcing.
+
+So: different ontological groundings, yes -- but located in usage (divine-only subject, no material named) rather than in a lexical definition, and sharpened into doctrine only after translation blurred them.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (122, 'bara', 'The Hebrew verb of Genesis 1:1; in its basic stem it takes only God as subject and never names its material -- a verb grammatically reserved for divine creation.'),
+  (122, 'asah / yatsar / banah', 'The Hebrew verbs humans do get: make/do, form (the potter''s verb), and build. Isaiah 43:7 uses all three alongside bara.'),
+  (122, 'creatio ex nihilo', 'The doctrine that God created from nothing; not stated by the word bara itself, first explicit around 2 Maccabees 7:28 and formalized in the 2nd century AD against Greek eternal-matter cosmology.'),
+  (122, 'tohu vabohu', 'The "formless void" already present in Genesis 1:2 -- the textual reason bara cannot be assumed to mean creation from nothing.'),
+  (122, 'Demiurge', 'Plato''s cosmic "craftsman" in the Timaeus who shapes eternal pre-existing matter after the Forms -- the ontology embedded in Greek making-language.'),
+  (122, 'lexical meaning vs usage pattern', 'The difference between what a word denotes by definition and what its distribution encodes (e.g., who may be its subject); bara''s theology lives in the second, not the first.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(122, 'What actually distinguishes Hebrew "bara" from Greek "poieo/epoiesen"?',
+ 'Bara is lexically defined as "create from nothing," while poieo means "craft from material"',
+ 'Bara''s distinctiveness is in its usage: God is its only subject and it never names material, while poieo is the common craft verb for any maker -- and the Septuagint flattened bara into epoiesen',
+ 'They are exact synonyms with no difference of any kind',
+ 'Poieo is the reserved divine verb and bara is the everyday human one',
+ 1,
+ 'Neither word lexically settles the ex nihilo question -- Genesis 1:2 has pre-existing chaos, and the doctrine was formalized centuries later. The real distinction is distributional: bara is grammatically reserved for divine action, poieo is universal craft language, and translating one into the other erased a distinction later theology had to rebuild explicitly.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(123, '2026-07-04', 9, 'In Aramaic, the translation of Genesis 1 speaks of the Memra -- what is that?',
+'THE TARGUMS -- Aramaic renderings of the Hebrew Bible produced for synagogue audiences who no longer spoke Hebrew (Onkelos, Neofiti, Pseudo-Jonathan) -- do something striking in Genesis 1 and many other passages: where the Hebrew has God acting directly, the Targum says THE MEMRA OF THE LORD acted. Memra (from Aramaic AMAR, "to say") means "WORD." Targum Neofiti''s Genesis 1 opens roughly: "From the beginning, with wisdom, the MEMRA of the LORD created and perfected the heavens and the earth."
+
+WHY INSERT IT? Partly REVERENTIAL DISTANCE -- a buffer against anthropomorphism, keeping God transcendent while His Word does the in-world acting. But it is not arbitrary: Genesis 1''s own creative mechanism IS speech -- "And God SAID, let there be light." The Memra personifies the saying that was already doing the creating.
+
+THE CONVERGENCE: Philo of Alexandria (Greek-speaking Jew, ~1st century AD) had developed the LOGOS -- the Word as God''s instrument of creation -- out of Greek philosophy. John 1:1 then opens with a deliberate echo of the Septuagint''s Genesis 1:1: "En arche en ho Logos" -- "In the beginning was the WORD... all things were made through him." Hebrew bara-by-speech -> Aramaic Memra -> Greek Logos is ONE IDEA MIGRATING ACROSS THREE LANGUAGES: creation happens through utterance, and the utterance gradually becomes a figure in its own right.
+
+TWO SCHOLARLY CAUTIONS: (1) whether the Memra is a mere CIRCUMLOCUTION (a respectful figure of speech) or a genuine divine intermediary (a HYPOSTASIS) is a live debate -- Moore argued buffer-phrase, Boyarin has argued real intermediary; (2) the Targums were WRITTEN DOWN centuries after Genesis (roughly 1st-7th century AD, with earlier oral roots), so they show how ancient Jews HEARD the text, not what it originally meant. Using them as evidence about Genesis itself is anachronistic; using them as evidence about the interpretive tradition is exactly right.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (123, 'Targum', 'An Aramaic translation-paraphrase of the Hebrew Bible for synagogue use (Onkelos, Neofiti, Pseudo-Jonathan); part translation, part interpretation.'),
+  (123, 'Memra', 'Aramaic for "Word" (from amar, to say); the agent the Targums insert where the Hebrew has God acting directly -- "the Memra of the LORD created."'),
+  (123, 'circumlocution', 'Saying something indirectly -- here, routing God''s actions through His Word as a reverential buffer against anthropomorphism.'),
+  (123, 'hypostasis', 'An attribute of God developed into a quasi-independent figure (Word, Wisdom, Spirit); the live debate is whether the Memra is one or merely a figure of speech.'),
+  (123, 'Logos', 'Greek "word/reason"; Philo''s term for God''s creative instrument, and the opening of John 1:1, which deliberately echoes Genesis 1:1''s "en arche."'),
+  (123, 'anachronism (in interpretation)', 'Reading a later source''s ideas back into an earlier text -- the caution required when using centuries-later Targums to interpret Genesis itself.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(123, 'What is the Memra in the Aramaic Targums of Genesis 1?',
+ 'A separate creator deity borrowed from Babylonian religion',
+ 'The "Word of the LORD" (from amar, "to say") that the Targums insert as the acting agent where the Hebrew has God act directly -- personifying Genesis 1''s creation-by-speech',
+ 'The Aramaic name for the formless void of Genesis 1:2',
+ 'A scribal error later corrected in the Septuagint',
+ 1,
+ 'Memra means "Word." The Targums route divine action through it, partly as reverential distance from anthropomorphism and partly because Genesis 1''s own mechanism is speech ("And God said..."). It sits in the middle of the migration from Hebrew bara-by-speech to Philo''s and John 1:1''s Greek Logos.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(124, '2026-07-04', 10, 'Are potatoes seeds?',
+'No. A potato is a TUBER -- a swollen underground STEM that the plant grows as a storage organ, packing away starch to survive winter and fuel next spring. It is not a seed, not a root, and botanically not even a vegetable-of-the-fruit kind. The giveaway is the EYES: each eye is a NODE with an axillary BUD, the same structure that produces leaves and branches on an above-ground stem. Roots do not have nodes and buds; stems do. That is why a potato left in the cupboard sprouts -- the buds are doing exactly what stem buds do.
+
+"SEED POTATO" IS A MISNOMER. When you plant a chunk of potato with an eye, you are doing VEGETATIVE (asexual, CLONAL) propagation: the new plant is a genetic clone of the parent, grown from stored stem tissue, not from a fertilized seed. Calling it "seed" describes its role (the thing you plant), not its botany.
+
+BUT POTATOES DO MAKE REAL SEEDS. The plant flowers, and the flowers can produce small green BERRIES (which look like tiny tomatoes -- and, like the rest of the plant, are toxic; potatoes are nightshades, Solanum tuberosum, kin to tomato and eggplant). Inside those berries are TRUE POTATO SEEDS (TPS), the product of actual sexual reproduction. So the plant has two propagation channels: clone yourself through tubers (fast, identical, what all farming uses), or make genetically varied seeds through flowers (slow, diverse, how breeders create new varieties).
+
+THE PAYOFF: eating a potato is eating the plant''s STEM-BATTERY, not its offspring. And a field of potatoes is typically a field of CLONES -- one genotype repeated -- which is precisely why potato monocultures are so vulnerable to a single pathogen. The Irish potato famine ran on a nation''s worth of genetically identical tubers meeting one blight (Phytophthora infestans) they had no varied genetics to resist.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (124, 'tuber', 'A swollen underground stem used for food storage; the potato itself. Distinct from a root -- it has nodes and buds.'),
+  (124, 'node / eye / axillary bud', 'A point on a stem where buds form; a potato''s "eyes" are nodes with buds, the proof it is stem tissue and the reason it sprouts.'),
+  (124, 'vegetative (clonal) propagation', 'Growing a new plant from a piece of the parent (a tuber chunk) rather than from seed; the offspring is a genetic clone.'),
+  (124, 'seed potato (misnomer)', 'A tuber piece planted to grow a crop; called "seed" for its planting role, but it is clonal stem tissue, not a botanical seed.'),
+  (124, 'true potato seed (TPS)', 'Actual seeds from the plant''s flowers and berries -- the product of sexual reproduction, used by breeders to create new varieties.'),
+  (124, 'nightshade / Solanum tuberosum', 'The potato''s family (Solanaceae) and species; relatives include tomato and eggplant, and the plant''s berries and green parts are toxic.'),
+  (124, 'monoculture vulnerability', 'The fragility of a crop of genetic clones to a single pathogen -- the structural cause behind the Irish potato famine.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(124, 'Botanically, what is a potato -- and what does that make a "seed potato"?',
+ 'A root; and a seed potato is its true seed',
+ 'A tuber (a swollen underground stem); and a "seed potato" is a clonal piece of stem you plant, not a botanical seed -- the plant''s real seeds come from its flowers/berries',
+ 'A seed; the eyes are the embryos',
+ 'A fruit, like the tomato it is related to',
+ 1,
+ 'A potato is a tuber -- a storage stem, shown by its eyes (nodes with buds). Planting a piece is vegetative/clonal propagation, so "seed potato" is a role-name, not botany. The plant does make true seeds sexually, inside toxic berries on its flowers.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(125, '2026-07-04', 11, 'What is a formalism?',
+'The word has two related senses worth holding apart.
+
+SENSE 1 -- A FORMALISM (countable, the everyday technical use): a specific NOTATION-PLUS-RULES SYSTEM for expressing ideas precisely, stripped of ambiguity. When "C = P_A(M)" got called "the CLRS formalism," that meant that particular way of writing keys as indexed functions -- the symbols, plus the rules for what you may do with them. Other examples: Big-O notation is a formalism for growth rates; regular expressions are a formalism for text patterns; the lambda calculus is a formalism for computation; sheet music is a formalism for sound. A formalism is a language DESIGNED SO THAT FORM CARRIES THE MEANING -- you can manipulate the symbols correctly without re-deriving what they stand for at each step.
+
+THE DEFINING MOVE of any formalism: it SEPARATES FORM FROM CONTENT so the form can be operated on MECHANICALLY. That is the payoff. Once "3 apples plus 2 apples" becomes "3 + 2," you can push the symbols around by rule -- and a machine, a compiler, or someone who does not understand the domain can do it correctly. This is exactly what makes each rung of the abstraction ladder possible: a compiler manipulates the FORMALISM of your source code without understanding your app.
+
+SENSE 2 -- FORMALISM (uncountable, the -ism): the stance that THE FORM IS WHAT MATTERS -- reason from the rules of the system itself rather than from intuition or real-world meaning. In math, Formalism (Hilbert''s program) is the position that mathematics IS the manipulation of symbols by rules, with no need for the symbols to "mean" anything beyond that. In law or art the word turns mildly pejorative -- "that is just formalism" = obeying the letter of the rules while missing their point.
+
+THE TENSION WORTH CARRYING (the thread through the whole day): a formalism''s power IS that it discards meaning to gain mechanical precision -- but that is also its risk. "epoiesen" flattening "bara" was a formalism losing a distinction the richer source encoded. Strip too much and the symbols march along correctly while the thing you cared about quietly drops out. Which is why the human job around any formalism is the same two things: SPECIFICATION (loading the right meaning into the form) and VERIFICATION (checking the mechanically-correct output still means what you wanted).
+
+RULE OF THUMB: if you can be RIGHT BY FOLLOWING THE RULES without understanding the subject, you are looking at a formalism.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (125, 'formalism (countable)', 'A specific notation-plus-rules system for expressing ideas precisely -- e.g. Big-O, regex, lambda calculus, musical notation -- designed so the form itself carries the meaning.'),
+  (125, 'Formalism (the -ism)', 'The stance that the form is what matters; in mathematics, Hilbert''s view that math is symbol-manipulation by rules with no need for the symbols to mean anything.'),
+  (125, 'form vs content', 'The separation a formalism enforces: the shape of the expression versus what it refers to. Splitting them is what lets form be manipulated mechanically.'),
+  (125, 'mechanical manipulation', 'Operating on symbols purely by rule, without understanding their meaning -- what compilers, calculators, and proof-checkers do, and the whole point of a formalism.'),
+  (125, 'notation', 'The concrete symbols and syntax of a formalism; the visible surface through which its rules are applied.'),
+  (125, 'formalism''s tradeoff', 'Gaining mechanical precision by discarding meaning -- powerful, but risky when a distinction the source encoded gets stripped away (as when epoiesen flattened bara).');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(125, 'What is the defining feature of a formalism (in the technical, countable sense)?',
+ 'It makes ideas sound more impressive and academic',
+ 'It separates form from content -- a notation plus rules where the form carries the meaning, so the symbols can be manipulated correctly and mechanically without understanding the subject',
+ 'It is any writing that uses Greek or mathematical letters',
+ 'It guarantees the conclusions are true in the real world',
+ 1,
+ 'A formalism is a notation-plus-rules system (Big-O, regex, lambda calculus, sheet music) engineered so form carries meaning. That lets a compiler or calculator operate on the symbols mechanically -- its power -- while the human keeps the jobs of specification and verification, since a formalism can also strip a distinction the source once encoded.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(126, '2026-07-04', 12, 'What does POLYSEMOUS mean?',
+'POLYSEMOUS (adjective; noun POLYSEMY) describes a single word that carries MULTIPLE RELATED SENSES. The parts spell it out: Greek POLY- ("many") + SEMA ("sign, meaning") -- literally "many-meaninged." It came up earlier today for the verb "read," which has a strict sense (took in text visually) and a loose sense (consumed the content of a book); one word, several linked meanings.
+
+THE KEY DISTINCTION -- polysemy vs. homonymy. Both are one spelling with more than one meaning, but:
+- POLYSEMY = the senses are RELATED, branches off one root meaning. "Head" -> head of a body, head of a company, head of a beer, head of a bed. All radiate from a single core notion. One dictionary entry, several numbered senses.
+- HOMONYMY = the meanings are UNRELATED and share a spelling by ACCIDENT. "Bank" (riverside) vs. "bank" (money) have no common thread -- they arrived from different origins and merely collided in spelling. Two separate dictionary entries.
+
+Rule of thumb: if you can feel the metaphorical thread connecting the senses, it is polysemy; if the shared spelling feels like a coincidence, it is homonymy.
+
+WHY IT MATTERS (the practical payoff, and why it keeps recurring today): polysemy is the fuel of VERBAL DISPUTES -- two people using the same polysemous word in different senses and mistaking that for a disagreement about facts (the audiobook "did you really READ it" argument). It is also exactly what makes "make/create" hard across languages: Greek poieo is broadly polysemous (do/make/create in one word) while Hebrew reserves bara for divine creation -- different languages carve the sense-space differently. Naming a word as polysemous is the move that lets you say "wait, which sense?" and dissolve the confusion.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (126, 'polysemous / polysemy', 'Of a word: having multiple related senses that branch from one core meaning (poly- "many" + sema "meaning"), e.g. the many senses of "head" or "read."'),
+  (126, 'homonymy', 'One spelling with multiple UNRELATED meanings that share form by accident, e.g. "bank" (riverside) vs. "bank" (money) -- contrast with polysemy.'),
+  (126, 'sense (lexical)', 'One distinct meaning of a word; a polysemous word has several senses listed under a single dictionary entry.'),
+  (126, 'semantic field', 'The space of related meanings a word or set of words carves up; different languages divide it differently (Greek poieo vs. Hebrew bara for "make/create").'),
+  (126, 'verbal dispute (recap)', 'An apparent disagreement that is really two speakers using one polysemous word in different senses -- resolved by asking "which sense?" See [[entry-4-on-2026-07-04]].');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(126, 'A word is POLYSEMOUS when it has:',
+ 'Multiple unrelated meanings that share a spelling by accident, like "bank" (river) and "bank" (money)',
+ 'Multiple related senses that branch from one core meaning, like "head" of a body, a company, and a beer',
+ 'Exactly one precise meaning with no ambiguity',
+ 'A meaning that changes randomly with no pattern',
+ 1,
+ 'Polysemy means many related senses radiating from a shared root notion (poly- "many" + sema "meaning"). Unrelated meanings that merely collide in spelling are homonymy instead -- the test is whether a metaphorical thread connects the senses.');

@@ -81,15 +81,118 @@ a:hover {
 
 /* ===== Page shell ===== */
 .page {
-  max-width: 1040px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: var(--s-7) var(--s-5) var(--s-8);
+  padding: var(--s-7) var(--s-6) var(--s-8);
 }
 
 @media (max-width: 720px) {
   .page {
     padding: var(--s-6) var(--s-4) var(--s-7);
   }
+}
+
+/* Reading column + sponsor rail sit side by side; header/colophon stay full width. */
+.spread {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .spread {
+    grid-template-columns: 1fr;
+    gap: var(--s-7);
+  }
+}
+
+/* ===== Sponsor rail (Potatuhs storefront) ===== */
+.adrail {
+  position: sticky;
+  top: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+@media (max-width: 1000px) {
+  .adrail {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--s-3);
+    border-top: 1px solid var(--rule);
+    padding-top: var(--s-5);
+  }
+}
+
+.adrail__kicker {
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0 0 var(--s-1);
+}
+
+@media (max-width: 1000px) {
+  .adrail__kicker { grid-column: 1 / -1; }
+}
+
+.adcard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  border-bottom-width: 1px;
+  color: var(--ink);
+  transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out), background 220ms var(--ease-out);
+}
+
+.adcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-soft);
+  background: var(--surface-2);
+}
+
+.adcard__eyebrow {
+  font-family: var(--sans);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.adcard__headline {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.15;
+  color: var(--ink);
+  font-variation-settings: 'opsz' 40;
+}
+
+.adcard__body {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.adcard__cta {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 2px;
 }
 
 /* ===== Eyebrow ===== */
@@ -966,17 +1069,18 @@ a:hover {
   margin-bottom: var(--s-5);
 }
 .entry__para {
-  font-family: var(--serif);
-  font-weight: 350;
-  font-size: 18.5px;
-  line-height: 1.65;
+  font-family: var(--sans);
+  font-weight: 420;
+  font-size: 17.5px;
+  line-height: 1.72;
+  letter-spacing: -0.003em;
   color: var(--ink);
-  max-width: 64ch;
+  max-width: 68ch;
   margin: 0;
-  font-variation-settings: 'opsz' 24;
 }
 .entry__para:first-of-type {
-  font-size: 20px;
+  font-size: 19px;
+  font-weight: 440;
   color: var(--ink);
 }
 

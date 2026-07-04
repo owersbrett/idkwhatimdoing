@@ -6,6 +6,7 @@ import Legal, { openLegal } from './Legal';
 import ManualDay from './manual';
 import QADay from './qa';
 import Brochure from './brochure';
+import AdRail from './AdRail';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -66,15 +67,18 @@ export default function App() {
       <DebugPanel day={day} />
       <main className="page">
         <AppHeader days={archive} currentDate={day.date} />
-        <div key={day.date} className="day">
-          {day.kind === 'manual' ? (
-            <ManualDay />
-          ) : (
-            <>
-              {hasBrochure && <ViewToggle view={view} onChange={setView} />}
-              {hasBrochure && view === 'brochure' ? <Brochure day={day} /> : <QADay day={day} />}
-            </>
-          )}
+        <div className="spread">
+          <div key={day.date} className="day">
+            {day.kind === 'manual' ? (
+              <ManualDay />
+            ) : (
+              <>
+                {hasBrochure && <ViewToggle view={view} onChange={setView} />}
+                {hasBrochure && view === 'brochure' ? <Brochure day={day} /> : <QADay day={day} />}
+              </>
+            )}
+          </div>
+          <AdRail />
         </div>
         <Colophon day={day} />
       </main>
