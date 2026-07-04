@@ -68,15 +68,17 @@ export default function App() {
       <main className="page">
         <AppHeader days={archive} currentDate={day.date} />
         <div className="spread">
-          <div key={day.date} className="day">
-            {day.kind === 'manual' ? (
-              <ManualDay />
-            ) : (
-              <>
-                {hasBrochure && <ViewToggle view={view} onChange={setView} />}
-                {hasBrochure && view === 'brochure' ? <Brochure day={day} /> : <QADay day={day} />}
-              </>
-            )}
+          <div className="reading">
+            <div key={day.date} className="day">
+              {day.kind === 'manual' ? (
+                <ManualDay />
+              ) : (
+                <>
+                  {hasBrochure && <ViewToggle view={view} onChange={setView} />}
+                  {hasBrochure && view === 'brochure' ? <Brochure day={day} /> : <QADay day={day} />}
+                </>
+              )}
+            </div>
           </div>
           <AdRail />
         </div>
