@@ -4483,3 +4483,205 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'A meaning that changes randomly with no pattern',
  1,
  'Polysemy means many related senses radiating from a shared root notion (poly- "many" + sema "meaning"). Unrelated meanings that merely collide in spelling are homonymy instead -- the test is whether a metaphorical thread connects the senses.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-05', 'qa', 'Relink before it breaks -- proactive reauth and the 30-day warning');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(127, '2026-07-05', 1, 'Why does proactive reauth UX matter given Stripe''s June 2026 changelog?',
+'THE CHANGELOG ITEM: Stripe''s June 2026 API release (2026-06-24.dahlia) "adds information about upcoming deactivations to the Financial Connections Account object." Small line, real shift: the expiry signal for a linked bank account now lives ON THE ACCOUNT OBJECT itself, queryable any time -- not only in the fire-once `financial_connections.account.upcoming_deactivation` webhook Stripe sends ~30 days out.
+
+WHY BANK LINKS DIE AT ALL: a Financial Connections link is not permanent. The OAuth token the bank issued to Stripe expires after a set period or from inactivity; the bank changes its MFA requirements; the user changes their password, locks the account, or revokes data sharing. Deactivation is a WHEN, not an IF. Every product built on linked bank accounts eventually faces reauth.
+
+REACTIVE vs PROACTIVE is the whole game:
+- REACTIVE: you find out the link is dead when something fails -- an off-session ACH debit bounces, a balance check errors, a data refresh returns nothing. The user finds out via a dunning email or a broken feature. That is the worst possible moment: trust is dented, revenue is delayed, and re-engaging a user AFTER a failure is dramatically harder than nudging them before one (this is the mechanics of INVOLUNTARY CHURN -- losing customers to plumbing, not to choice).
+- PROACTIVE: with the deactivation date on the object, your app can render "your bank connection expires in 12 days -- relink now" in-product, at login, when the user is already authenticated and paying attention. Stripe''s RELINK flow is deliberately lighter than first-time linking (no bank picker -- the institution is already known), so the proactive path is one low-friction tap. The reactive path is a support ticket.
+
+THE RESPONSIBILITY SHIFT: before, "we didn''t know it was about to expire" was at least partially Stripe''s problem (did you catch the webhook? was your endpoint up that day?). Now the signal sits on the object you already fetch. If a connection lapses silently, that is a PRODUCT failure -- yours -- not an information failure. Changelog lines like this quietly move the burden: the platform hands you the signal; the UX that acts on it is your job.
+
+(SCOPE NOTE: nothing in the June 2026 changelog touches card reauthentication or SCA -- the other auth-flavored item, Visa DCAP / Data Only 3DS support, is about optimizing authentication cost on card payments, a different animal. The reauth story is the Financial Connections one.)');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (127, 'Stripe Financial Connections', 'Stripe''s open-banking product for linking a user''s bank account to an app -- for ACH payments, balance checks, and transaction data.'),
+  (127, 'reauthentication (relink)', 'Having a user re-consent and re-verify an expired bank/OAuth connection. Stripe''s relink flow skips the bank picker, making it lighter than initial linking.'),
+  (127, 'OAuth token expiry', 'Access tokens banks grant to aggregators expire after a set period or inactivity -- the structural reason every linked-account integration eventually needs reauth.'),
+  (127, 'webhook vs. polling a field', 'A webhook is a fire-once push notification to your server; a field on an object can be read any time. June 2026 added the deactivation info to the object, enabling in-product UI without depending on having caught the webhook.'),
+  (127, 'off-session payment', 'A charge made without the user present (e.g. a scheduled ACH debit). These fail silently when the underlying connection has lapsed -- the user is not there to fix it.'),
+  (127, 'involuntary churn', 'Losing a customer to a mechanical failure (expired card, dead bank link) rather than a decision to leave. Proactive reauth UX is an anti-involuntary-churn measure.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(127, 'Stripe''s June 2026 changelog added upcoming-deactivation info to the Financial Connections Account object. Why does that make PROACTIVE reauth UX matter more?',
+ 'Because Stripe now automatically relinks accounts, so no UX is needed',
+ 'Because bank links now expire faster than they used to',
+ 'Because the expiry signal is now queryable on the object itself -- so apps can prompt users to relink in-product before off-session payments fail, and a silent lapse becomes a product failure rather than a missing-information problem',
+ 'Because the changelog made reauthentication mandatory for all card payments under SCA',
+ 2,
+ 'Bank links inevitably die (OAuth expiry, MFA changes, revoked access). Previously the 30-day warning arrived only as a fire-once webhook; putting it on the Account object means any app can read it any time and nudge the user to relink -- one light tap -- instead of discovering the lapse when an ACH debit bounces. The platform now hands you the signal; acting on it is your UX''s job.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(128, '2026-07-05', 2, 'Why does my .zshrc / profile get accessed from a non-interactive shell spawned by Claude?',
+'FIRST, THE RULEBOOK. Which startup files zsh reads depends on two independent flags on the shell: is it a LOGIN shell, and is it INTERACTIVE?
+- `~/.zshenv` -- read by EVERY zsh, always.
+- `~/.zprofile` -- read by LOGIN shells.
+- `~/.zshrc` -- read by INTERACTIVE shells only.
+- `~/.zlogin` -- read by LOGIN shells, after zshrc.
+
+MEASURED ON THIS MACHINE: asking Claude''s own spawned shell (`[[ -o interactive ]]`, `[[ -o login ]]`) reports interactive: NO, login: YES. So every Bash tool call runs a NON-INTERACTIVE LOGIN zsh -- which by the rulebook reads `.zshenv` and `.zprofile` on every single command. That is most of the "profile getting accessed" right there.
+
+BUT `.zshrc` NEEDS THE INTERACTIVE FLAG -- so why does it get touched? THE SNAPSHOT MECHANISM: at session start, Claude Code launches your shell once with your full configuration loaded (that load reads `.zshrc`), then captures the resulting state -- functions, completions, environment -- into a SNAPSHOT FILE under `~/.claude/shell-snapshots/` (visible on this machine, ~8.5KB each, one per session). Each subsequent command then runs in a fresh non-interactive shell that SOURCES THE SNAPSHOT instead of re-running your rc files. Your `.zshrc` is read at snapshot-build time; your `.zprofile`/`.zshenv` are read every time because of the login flag.
+
+WHY THIS IS DELIBERATE: without it, Claude''s shells would miss everything your terminal has -- the PATH entries added by Homebrew, nvm, pyenv, cargo; your functions; your env vars. Every `npm run dev` would be `command not found` or, worse, silently use the wrong Node. Initializing from your profile makes the agent''s shell match YOUR shell, so what works for you works for it.
+
+THE GOTCHA THIS CREATES: anything in your rc files that assumes a human at a TTY -- printing banners, `exec tmux`, prompts that block for input, powerlevel10k instant prompt -- now runs (or breaks) inside automation. The fix is standard: guard interactive-only lines with `[[ -o interactive ]] || return` near the top of `.zshrc`, and keep pure environment setup in `.zshenv`/`.zprofile` where non-interactive shells are SUPPOSED to find it.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (128, 'login shell', 'A shell started as part of "logging in" (or with -l), which reads the profile files (.zprofile/.zlogin). Independent of whether it is interactive.'),
+  (128, 'interactive shell', 'A shell attached to a human at a terminal (prompt, line editing). Only interactive zsh reads .zshrc. Test with [[ -o interactive ]].'),
+  (128, 'non-interactive shell', 'A shell running a script or a -c command with no human attached -- what automation (including Claude Code) spawns.'),
+  (128, 'shell snapshot', 'Claude Code''s captured copy of your shell state (functions, env) built once per session from your full config and sourced into each command''s fresh shell -- ~/.claude/shell-snapshots/.'),
+  (128, 'zsh startup files', 'The read-order matrix: .zshenv (always), .zprofile (login), .zshrc (interactive), .zlogin (login, last). Which files run depends on the login/interactive flags.'),
+  (128, 'TTY guard', 'A line like [[ -o interactive ]] || return that stops human-only rc config from running inside automation''s shells.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(128, 'Claude Code spawns a NON-INTERACTIVE LOGIN zsh for each command. By zsh''s rules, which files does that shell read directly on every command?',
+ '.zshrc only -- rc files are for automation',
+ '.zshenv and .zprofile -- .zshrc needs the interactive flag, and only gets loaded once when the session''s shell snapshot is built',
+ 'All four startup files, every time',
+ 'None -- non-interactive shells read no config at all',
+ 1,
+ '.zshenv is read by every zsh and .zprofile by login shells, so both run on each command. .zshrc requires an interactive shell; Claude Code touches it once per session while building the shell snapshot it then sources into each command, so the agent''s environment matches your terminal.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(129, '2026-07-05', 3, 'What is a zshrc?',
+'`~/.zshrc` is a PLAIN SHELL SCRIPT in your home directory that zsh automatically runs at the start of every INTERACTIVE shell -- every time you open a terminal tab and get a prompt. It is not a special format; it is just zsh code executed top to bottom before you get control.
+
+THE NAME: "rc" is an old Unix suffix meaning RUN COMMANDS (from "runcom" on 1960s MIT systems). The pattern generalizes: .vimrc, .npmrc, .bashrc -- "the commands/config to run when this program starts."
+
+WHAT BELONGS THERE: the things that shape your INTERACTIVE experience -- your prompt/theme, aliases, shell functions, key bindings, completion setup (`compinit`), history behavior, and the init lines version managers ask you to add (nvm, pyenv, rbenv). Frameworks like oh-my-zsh are essentially elaborate .zshrc files.
+
+WHAT DOES NOT BELONG THERE (the classic mistake): environment variables and PATH entries that SCRIPTS need. Because .zshrc only runs for interactive shells, anything a cron job, an editor, or an agent-spawned shell needs must live in `.zshenv` (always read) or `.zprofile` (login shells). If a tool works in your terminal but "command not found"s everywhere else, the config is probably stranded in .zshrc.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (129, 'rc file / "run commands"', 'The Unix convention (.zshrc, .vimrc, .npmrc) of a dotfile of commands a program executes at startup; from 1960s "runcom".'),
+  (129, 'dotfile', 'A file whose name starts with "." making it hidden by default in ls; the traditional home for per-user config.'),
+  (129, 'alias', 'A shell shortcut expanding one word to a longer command (alias gs="git status"); defined per-shell, typically in .zshrc.'),
+  (129, 'compinit', 'zsh''s completion-system initializer, conventionally called from .zshrc; powers tab-completion.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(129, 'What is ~/.zshrc, and when does it run?',
+ 'A binary config database zsh compiles at install time',
+ 'A plain zsh script run automatically at the start of every INTERACTIVE zsh -- home of prompt, aliases, functions, and completion',
+ 'A script run once at system boot for all users',
+ 'A log file where zsh records the commands you type',
+ 1,
+ 'It is ordinary shell code ("rc" = run commands) executed whenever an interactive zsh starts. Because non-interactive shells skip it, environment that scripts need belongs in .zshenv or .zprofile instead.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(130, '2026-07-05', 4, 'What is a bashrc?',
+'`~/.bashrc` is bash''s counterpart to .zshrc -- a plain script bash runs at startup -- but bash carves the rules differently, and the difference bites people constantly.
+
+BASH''S RULE: `.bashrc` runs for INTERACTIVE NON-LOGIN shells. Interactive LOGIN shells skip it and read `.bash_profile` instead. (zsh is saner: interactive means .zshrc, login means .zprofile, and both can apply to one shell.)
+
+WHY THAT RULE BITES ON MACOS: Terminal.app and iTerm start every new tab as a LOGIN shell. So on a Mac, bash reads `.bash_profile` and IGNORES your `.bashrc` -- the classic "I put my alias in .bashrc and nothing happened" mystery. On most Linux desktops, new terminal windows are NON-login, so .bashrc is the file that matters. Same shell, opposite habits per OS.
+
+THE STANDARD FIX is a one-line bridge in `.bash_profile`: `[ -f ~/.bashrc ] && source ~/.bashrc` -- so login shells pull in the rc too, and you keep all real config in one file.
+
+ONE MORE BASH QUIRK: a non-interactive bash spawned by a remote command (e.g. `ssh host somecommand`) DOES read .bashrc -- which is why many distro-shipped .bashrc files start with a guard like `case $- in *i*) ;; *) return;; esac` (bail out if not interactive). NOTE: on macOS since Catalina (2019) the default shell is zsh, so .bashrc only matters where you explicitly run bash.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (130, '.bash_profile vs .bashrc split', 'bash reads .bash_profile for login shells and .bashrc for interactive non-login shells -- so config must be bridged (profile sources rc) to apply everywhere.'),
+  (130, 'macOS login-shell convention', 'Terminal.app/iTerm start each tab as a LOGIN shell -- opposite of most Linux terminals -- flipping which bash startup file actually runs.'),
+  (130, 'source (dot) command', 'Runs a script inside the CURRENT shell so its exports/aliases persist, rather than in a throwaway child process. `source ~/.bashrc` or `. ~/.bashrc`.'),
+  (130, 'interactivity guard', 'The `case $- in *i*)` idiom at the top of a .bashrc that returns early for non-interactive shells, since bash sometimes reads .bashrc for those too.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(130, 'You add an alias to ~/.bashrc on a Mac using bash, open a new Terminal tab, and the alias is missing. Why?',
+ 'Aliases cannot be defined in .bashrc',
+ 'macOS Terminal starts each tab as a LOGIN shell, so bash reads .bash_profile and skips .bashrc -- the fix is having .bash_profile source .bashrc',
+ 'macOS caches shell config and needs a reboot',
+ '.bashrc only applies to the root user',
+ 1,
+ 'bash splits its startup files: login shells read .bash_profile, interactive non-login shells read .bashrc. Mac terminals launch login shells (Linux terminals usually do not), so the conventional one-line bridge -- .bash_profile sourcing .bashrc -- keeps one canonical config file.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(131, '2026-07-05', 5, 'What is a zsh profile?',
+'`~/.zprofile` is the startup script zsh runs for LOGIN SHELLS -- read after `.zshenv`, before `.zshrc`. Think of it as the ONCE-PER-SESSION layer: it runs when a session begins (a terminal tab on macOS, an SSH login, or any `zsh -l`), while `.zshrc` runs for every interactive shell including nested ones.
+
+WHAT BELONGS THERE: ENVIRONMENT -- the stuff you want set once and inherited by everything downstream. PATH additions, `export`ed variables, language/locale settings. This is why Homebrew''s installer tells you to put `eval "$(/opt/homebrew/bin/brew shellenv)"` in `.zprofile`: set the PATH once at login, and every child process inherits it.
+
+THE MACOS WRINKLE: before your `.zprofile`, the system runs `/etc/zprofile`, which calls PATH_HELPER -- a macOS utility that assembles PATH from /etc/paths and /etc/paths.d. Since Mac terminals open every tab as a login shell, this whole login chain runs per tab -- which is why "login shell" on macOS does not mean "only at actual login."
+
+THE FULL LOGIN-SHELL READ ORDER: `.zshenv` (always) -> `.zprofile` (login) -> `.zshrc` (if also interactive) -> `.zlogin` (login, last -- a rarely-used post-rc hook). For automation the practical takeaway from today: a NON-INTERACTIVE login shell (what Claude Code spawns) runs .zshenv and .zprofile but not .zshrc -- so .zprofile is exactly where config should live if you want agents and scripts to see it.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (131, '.zprofile', 'zsh''s login-shell startup file; the once-per-session environment layer (PATH, exports), read between .zshenv and .zshrc.'),
+  (131, '.zshenv', 'Read by EVERY zsh -- interactive, login, script, or agent-spawned. The most universal (and thus most performance-sensitive) startup file.'),
+  (131, '.zlogin', 'The login shell''s final startup file, after .zshrc; a rarely-used post-setup hook.'),
+  (131, 'path_helper', 'macOS utility invoked by /etc/zprofile that builds PATH from /etc/paths and /etc/paths.d before user config runs.'),
+  (131, 'environment inheritance', 'Child processes receive a copy of the parent''s exported variables -- why setting PATH once in a login profile covers everything launched from that session.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(131, 'Homebrew asks you to put its PATH setup in ~/.zprofile rather than ~/.zshrc. What makes .zprofile the right layer?',
+ '.zprofile runs for LOGIN shells -- once per session, inherited by children, and read even by non-interactive login shells (like agent-spawned ones) that skip .zshrc',
+ '.zprofile is the only file allowed to modify PATH',
+ '.zprofile runs faster because zsh compiles it',
+ 'There is no difference; the two files are aliases for each other',
+ 0,
+ 'Environment (PATH, exports) belongs in the login layer: set once, inherited downstream, and visible to non-interactive login shells that never read .zshrc. .zshrc is the interactive layer -- prompt, aliases, completion -- re-run per interactive shell.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(132, '2026-07-05', 6, 'What is a bash profile?',
+'`~/.bash_profile` is bash''s LOGIN-SHELL startup script -- the bash counterpart of `.zprofile`, with two bash-specific twists.
+
+TWIST 1 -- THE FIRST-MATCH RULE: at login, bash does not read every profile file. It searches in order -- `.bash_profile`, then `.bash_login`, then `.profile` -- and runs ONLY THE FIRST ONE that exists. Creating a .bash_profile therefore silently disables a .profile you may also have (a common way to "lose" config). `.profile` is the ancient Bourne-shell name, still honored so sh-compatible config keeps working.
+
+TWIST 2 -- THE EXCLUSIVE SPLIT: unlike zsh (where a login+interactive shell reads BOTH .zprofile and .zshrc), a bash login shell reads .bash_profile INSTEAD OF .bashrc. Hence the universal convention: keep .bash_profile nearly empty except for environment exports plus the bridge line `[ -f ~/.bashrc ] && source ~/.bashrc`, and put everything else in .bashrc.
+
+DIVISION OF LABOR (same principle as zsh): profile = once-per-session ENVIRONMENT (PATH, exports); rc = per-shell INTERACTIVE setup (prompt, aliases, functions). The names differ across shells; the layering idea is identical.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (132, '.bash_profile', 'bash''s login-shell startup file; conventionally holds exports plus one line sourcing .bashrc.'),
+  (132, 'first-match rule', 'At login bash runs only the FIRST existing file of .bash_profile, .bash_login, .profile -- so adding .bash_profile silently disables .profile.'),
+  (132, '.profile', 'The original Bourne-shell login file; the portable, shell-agnostic place for POSIX-compatible environment setup.'),
+  (132, 'profile vs rc layering', 'The cross-shell pattern: profile files = once-per-session environment; rc files = per-shell interactive config.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(132, 'You create a new ~/.bash_profile and suddenly config in your old ~/.profile stops applying. Why?',
+ 'Creating .bash_profile corrupts .profile',
+ 'At login bash runs only the FIRST file found of .bash_profile, .bash_login, .profile -- your new file now shadows .profile entirely',
+ '.profile is only read by zsh',
+ 'macOS deletes .profile when .bash_profile appears',
+ 1,
+ 'bash''s login search is first-match-only, so .bash_profile shadows .profile. Fix by sourcing .profile (and .bashrc) from .bash_profile. zsh avoids this class of surprise by reading its files additively.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(133, '2026-07-05', 7, 'What are the differences between zsh and bash?',
+'BOTH ARE BOURNE-FAMILY SHELLS -- descendants of 1977''s sh, mostly POSIX-compatible, so everyday commands and 95% of scripts run identically in either. The differences live at the edges, and they sort into three buckets.
+
+BUCKET 1 -- HISTORY AND DEFAULTS. bash (1989, GNU "Bourne Again SHell") is the lingua franca: default on most Linux systems, the assumed target of #!/bin/bash scripts everywhere. zsh (1990) became the macOS default in Catalina (2019) -- largely because bash moved to the GPLv3 license and Apple froze its shipped bash at ancient 3.2 rather than accept it. So: write FOR bash, live IN zsh is a common modern split.
+
+BUCKET 2 -- INTERACTIVE EXPERIENCE (zsh''s home turf). Richer tab completion (menus you can arrow through, right-hand-side descriptions), stronger globbing (`**/*.ts` recursion, glob qualifiers like `*(.om[1])` = newest plain file), spelling correction, shared history across tabs, and a huge theming/plugin ecosystem (oh-my-zsh, powerlevel10k). Modern bash narrows the gap with bash-completion, but zsh''s defaults are further ahead out of the box.
+
+BUCKET 3 -- SCRIPTING GOTCHAS (where "mostly compatible" bites):
+- WORD SPLITTING: in bash, an unquoted `$var` containing spaces splits into multiple words; in zsh it does NOT. Hides quoting bugs in one direction, breaks assumptions in the other.
+- ARRAYS: bash arrays are 0-indexed; zsh arrays are 1-INDEXED. `${arr[0]}` vs `$arr[1]` for the first element.
+- Startup files differ (today''s whole thread: .bashrc/.bash_profile vs .zshrc/.zprofile, first-match vs additive).
+
+PRACTICAL RULE: scripts get a `#!/bin/bash` (or `#!/bin/sh` for strict portability) shebang and run the same everywhere regardless of your interactive shell; your interactive shell is a comfort choice. The shebang decides what runs the script -- not the shell you typed it from.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (133, 'Bourne shell family', 'Shells descending from 1977''s sh (bash, zsh, dash, ksh) sharing core syntax; why most scripts run in any of them.'),
+  (133, 'POSIX shell', 'The standardized common subset of shell behavior; #!/bin/sh scripts targeting it run under any compliant shell.'),
+  (133, 'shebang (#!)', 'The first line of a script naming its interpreter (#!/bin/bash); it -- not your interactive shell -- decides what executes the script.'),
+  (133, 'word splitting', 'The shell breaking an unquoted expansion into words on whitespace. bash does it to unquoted $var; zsh by default does not -- a top cross-shell gotcha.'),
+  (133, 'glob qualifiers', 'zsh''s pattern suffixes filtering matches by attribute, e.g. *(.om[1]) = the most recently modified plain file.'),
+  (133, 'GPLv3 / why macOS switched', 'The license change that stopped Apple updating bash past 3.2 and drove the Catalina (2019) switch to zsh as default.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(133, 'Which of these is a REAL scripting difference between bash and zsh?',
+ 'zsh cannot run scripts, only interactive sessions',
+ 'bash word-splits unquoted $var on spaces and 0-indexes arrays; zsh does not split unquoted expansions and 1-indexes arrays',
+ 'bash has no functions, so zsh was created to add them',
+ 'They share nothing; every command differs',
+ 1,
+ 'The shells are ~95% compatible (both Bourne-family), but the edges bite: unquoted-expansion word splitting and array indexing flip between them, and startup files differ. Hence the rule -- give scripts an explicit #!/bin/bash or #!/bin/sh shebang, and treat your interactive shell as a separate comfort choice.');
