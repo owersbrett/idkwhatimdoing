@@ -4685,3 +4685,170 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'They share nothing; every command differs',
  1,
  'The shells are ~95% compatible (both Bourne-family), but the edges bite: unquoted-expansion word splitting and array indexing flip between them, and startup files differ. Hence the rule -- give scripts an explicit #!/bin/bash or #!/bin/sh shebang, and treat your interactive shell as a separate comfort choice.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-07', 'qa', 'Saturate the window -- parallel sessions, shared quota, and the guilt of latent compute');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(134, '2026-07-07', 1, 'What is it called to kick off a bunch of Claude Code sessions in parallel -- say, before a live demo, to maximize token usage against quota?',
+'There is no single official name for the pre-demo warm-up move, but the pieces you are describing each have a documented name, and they are different tools:
+
+- **Parallel sessions with git worktrees** -- THE documented pattern for running multiple simultaneous Claude Code sessions on one repo. `claude --worktree feature-x` (or `-w`) gives each session its own working directory and branch, so parallel sessions never fight over files. Docs: code.claude.com/docs/en/worktrees.
+- **Background agents** -- `claude --bg "task"` starts a session and returns your terminal immediately; monitor the fleet with `claude agents` (the agent view: Working / Needs input / Completed). This is the documented "kick off work that runs while you do something else."
+- **Headless mode** -- `claude -p "prompt"` runs one non-interactive query and exits. Wrap it in a shell loop and you have scripted fan-out.
+- **Subagents** -- parallel workers spawned INSIDE one session, each with its own context window. Parallelism within a conversation rather than across terminals.
+
+The umbrella terms people use for the whole idea: **fan-out**, **multi-agent orchestration**, or informally an agent fleet/swarm.
+
+The quota half of your question has a catch, though: your subscription quota is a SHARED bucket. Every parallel session, subagent, and background task draws from the same 5-hour rolling window and weekly cap. Parallelism does not get you more tokens -- it converts wall-clock time into throughput. So the pre-demo move is really about having long-running work already finished (or in flight) before the camera is on, not about extracting extra capacity.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (134, 'git worktree', 'A second (or Nth) working directory attached to one repo, each on its own branch -- what lets parallel Claude Code sessions edit the same repo without collisions.'),
+  (134, 'background agent', 'A Claude Code session started with `claude --bg` that runs detached from your terminal; monitored via `claude agents`.'),
+  (134, 'headless mode', 'Running Claude Code non-interactively with `claude -p "prompt"` -- one query, one response, exit. The scripting/CI building block for fan-out.'),
+  (134, 'fan-out', 'Splitting one goal into many independent tasks dispatched in parallel, results collected after. The general pattern behind subagents, background agents, and worktree fleets.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(134, 'You kick off five parallel Claude Code sessions before a demo "to get more out of your quota." What actually happens to your quota?',
+ 'Each session gets its own fresh quota, so you now have 5x capacity',
+ 'All five draw from one shared bucket -- you spend the same quota faster, trading wall-clock time for throughput',
+ 'Parallel sessions are free; only the interactive session bills against quota',
+ 'Quota pauses while sessions run in the background',
+ 1,
+ 'Subscription quota is a shared bucket across all sessions, subagents, and background agents on the account. Parallelism buys speed (more done per hour of YOUR time), never extra tokens.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(135, '2026-07-07', 2, 'How do Claude Code usage quotas actually work -- what is the window, and what resets when?',
+'Two layers, both on the same shared bucket (as of mid-2026; verified against May 2026 reporting, since the official support page could not be fetched directly):
+
+LAYER 1 -- THE 5-HOUR ROLLING WINDOW. The window starts at your FIRST prompt, not on the clock hour: first prompt at 10:00 AM means that usage ages out at 3:00 PM. It is rolling, so capacity frees continuously as old usage falls out the back of the window -- there is no single "reset moment" to wait for.
+
+LAYER 2 -- THE WEEKLY CAP. A longer-horizon ceiling on total compute, sitting above the 5-hour window. You can be fine on the short window and still hit the weekly wall.
+
+THE SHARED-BUCKET RULE: Claude Code sessions, subagents, background agents, and claude.ai chat on the same account all draw from one pool. There is no per-session isolation.
+
+Recent history worth knowing: on May 6, 2026, Anthropic doubled the 5-hour rate limits for Pro, Max, Team, and Enterprise plans and removed the peak-hours reduction for Pro/Max.
+
+The demo-prep implication: "use it or lose it" is only half true. Unused window capacity does expire, but burning it on busywork buys nothing. What the rolling window actually rewards is having a QUEUE of real tasks ready, so capacity is always being converted into finished work.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (135, 'rolling window', 'A limit measured over the trailing N hours from now, not a fixed calendar block -- usage continuously ages out rather than resetting all at once.'),
+  (135, 'rate limit vs quota', 'Rate limit = how fast you may spend (the 5-hour window); quota/cap = how much total you may spend (the weekly layer). You can hit either one first.'),
+  (135, 'shared quota bucket', 'One pool of capacity per account that every surface (sessions, subagents, background agents, claude.ai chat) draws from -- no per-session allotment.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(135, 'Your first Claude Code prompt today was at 10 AM and you hit the 5-hour limit at noon. When can you work again?',
+ 'At exactly 3 PM, when the whole window resets at once',
+ 'Not until midnight, when daily quotas reset',
+ 'Gradually -- it is a rolling window, so capacity frees continuously as usage from 5 hours ago ages out',
+ 'Immediately, if you open a second terminal session',
+ 2,
+ 'The window rolls: each prompt ages out 5 hours after it happened, so capacity trickles back rather than resetting on a schedule. And a second session will not help -- all sessions share one bucket.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(136, '2026-07-07', 3, 'What is the difference between a subagent, a worktree session, and a background agent in Claude Code?',
+'Three tiers of parallelism, sorted by how independent the worker is from you:
+
+**SUBAGENT -- a worker inside your conversation.** Spawned by the session you are talking to (the Agent/Task tool). Gets its own fresh context window, its own tool permissions, does the work, and returns only a summary to the parent -- which is the point: a subagent can grep through 200 files without flooding your main context. It lives and dies within your session.
+
+**WORKTREE SESSION -- a sibling conversation on an isolated copy.** A full interactive Claude Code session you start yourself (`claude -w branch-name`), running against its own git worktree so it can edit files without colliding with your main session. Fully independent context and history; YOU are the orchestrator switching between terminals.
+
+**BACKGROUND AGENT -- a session running without you.** Started with `claude --bg "task"`, it is a complete Claude Code conversation that persists with no terminal attached, locally or on Anthropic''s cloud infrastructure (cloud sessions keep running even if you close the app). You check on the fleet with `claude agents`.
+
+Rule of thumb: subagent when the MAIN conversation needs the result but not the mess; worktree session when you want to actively drive two workstreams; background agent when you want to fire-and-forget and collect later. All three bill against the same shared quota.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (136, 'subagent', 'A worker spawned inside one Claude Code session with its own context window and permissions; returns a summary so the parent conversation stays clean.'),
+  (136, 'agent view', 'The `claude agents` screen -- the fleet monitor showing each background session''s state: Working, Needs input, or Completed.'),
+  (136, 'context isolation', 'Giving a worker its own context window so its intermediate noise (search results, logs, file dumps) never enters the parent conversation.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(136, 'You want Claude to sweep the whole repo for usages of a deprecated API while your main conversation stays focused on the refactor plan. Which tier fits?',
+ 'A subagent -- it searches in its own context window and returns only the summary your main session needs',
+ 'A worktree session -- searching requires an isolated branch',
+ 'A background agent -- searches must run detached from the terminal',
+ 'None; searching always happens in the main context',
+ 0,
+ 'The deciding question is "who needs the result?" The MAIN conversation needs the findings but not the hundreds of grep hits -- exactly what subagent context isolation is for. Worktrees isolate FILE EDITS; background agents detach WHOLE TASKS from your attention.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(137, '2026-07-07', 4, 'Is "latent compute" a real term? Unused quota gives me the feeling of not fully committing as much as I should.',
+'"Latent compute" is not a standard industry term, but it is a perfectly readable coinage for a real one: **idle capacity**, and the metric that measures the feeling is **utilization** -- the fraction of available capacity doing useful work. Your instinct is the classic ops instinct: an idle server is money burning, a quota window aging out unused is capacity you paid for evaporating. Cloud providers built entire billing models (spot instances, preemptible VMs) around selling exactly that latency.
+
+But there is a trap on the other side, and it has a name too: **Goodhart''s law** -- when a measure becomes a target, it stops being a good measure. "Tokens burned" is a PROXY for work done. Optimize the proxy directly ("kick off sessions to max out the quota") and you get busywork: parallel sessions doing things nobody needed, which cost your attention to review afterward. Attention, not tokens, is usually the scarce resource.
+
+The version of your instinct that survives the trap: the guilt should attach to the BACKLOG, not the meter. Full commitment looks like always having a queue of real, well-specified tasks ready to dispatch -- so that whenever capacity exists, a genuine task is there to soak it up (the fan-out patterns from entry 1 are the dispatch mechanisms). If the queue is empty, the honest move is writing better tasks, not burning tokens to feel thorough. Utilization is a lagging indicator of a good backlog, not a goal you chase directly.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (137, 'utilization', 'The fraction of available capacity doing useful work -- the ops metric behind the "idle compute = waste" instinct.'),
+  (137, 'idle capacity', 'Provisioned-but-unused resources; the standard term for what "latent compute" gestures at. Cloud spot/preemptible pricing exists to sell it off.'),
+  (137, 'Goodhart''s law', 'When a measure becomes a target, it ceases to be a good measure -- e.g. chasing "tokens burned" (a proxy for work) produces busywork instead of work.'),
+  (137, 'proxy metric', 'A number you optimize because the thing you actually care about is hard to measure. Safe only while the proxy and the target stay correlated.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(137, 'Feeling guilty about unused quota, you spin up parallel sessions on invented tasks to "max utilization." Which concept names the mistake?',
+ 'Word splitting -- the tasks were split incorrectly',
+ 'Goodhart''s law -- token burn is a proxy for work done, and optimizing the proxy directly yields busywork',
+ 'Context isolation -- the sessions should have shared one context',
+ 'The rolling window -- utilization cannot be measured in rolling windows',
+ 1,
+ 'Tokens burned correlates with work done only when tasks are real. Target the proxy itself and the correlation breaks: you pay quota AND the attention to review output nobody needed. Fix the backlog (a queue of genuine tasks), and utilization follows.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(138, '2026-07-07', 5, 'What does a good pre-demo fan-out setup actually look like, step by step?',
+'A runbook, not a vibe. The order matters because the expensive mistakes happen at the start (bad tasks) and the end (nothing to show):
+
+1. **Write the backlog FIRST.** One well-specified task per agent: a paragraph of context, an explicit definition of done, and no dependency on any other task in the batch. This is where the commitment actually happens -- everything after is dispatch.
+
+2. **Pick the tier per task** (entry 3''s triad): needs your steering as it goes -> worktree session (`claude -w`); fire-and-forget -> background agent (`claude --bg`); research the main session needs -> subagent. Keep tasks touching DIFFERENT parts of the repo so the fan-in later is clean.
+
+3. **Kick off early.** The 5-hour window starts at your first prompt, so launching an hour before the demo costs nothing extra -- it just means long tasks are finished or visibly mid-flight when the camera is on.
+
+4. **Make the fleet the set dressing.** `claude agents` showing five sessions in Working/Completed states IS the demo -- an arcade would call it attract mode (see 2026-07-02, entry 1): the machine performing before anyone touches it.
+
+5. **Dry-run the finale.** Whatever you plan to show live, have one completed run already in hand from a rehearsal. Live demos fail in ways rehearsals do not -- every presenter knows the superstition as the "demo gods" -- so the rehearsal artifact is your fallback slide.
+
+The through-line: steps 1 and 5 are the ones people skip, and they are the two that distinguish "prepared fan-out" from "burning quota to look busy" (entry 4).');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (138, 'runbook', 'A written, ordered procedure for an operation you cannot afford to improvise -- the difference between a repeatable demo and a lucky one.'),
+  (138, 'dry run', 'A full rehearsal of the real procedure in advance; its output doubles as your fallback artifact if the live version misbehaves.'),
+  (138, 'demo gods', 'Presenter superstition naming the observed law that software fails during live demos in ways it never did in testing -- appeased by rehearsal and fallback artifacts, not hope.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(138, 'Which two steps of a pre-demo fan-out are the ones most often skipped -- and the ones that separate preparation from busywork?',
+ 'Choosing the CLI flags and naming the worktrees',
+ 'Writing a well-specified backlog first, and dry-running the finale so a completed artifact exists as fallback',
+ 'Maximizing session count and starting as late as possible to keep the window fresh',
+ 'Disabling quota tracking and merging all agents into one session',
+ 1,
+ 'Dispatch (flags, tiers, kickoff) is the easy middle. The bookends -- real tasks in, rehearsed artifact out -- are what make the fleet produce a demo instead of token burn. Skipping step 1 recreates the Goodhart trap from entry 4; skipping step 5 leaves you betting the finale on the demo gods.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(139, '2026-07-07', 6, 'After the fan-out, how does all the parallel work come back together?',
+'The return trip is called **fan-in**, and it is the part nobody budgets for. Generation parallelizes; integration and review largely do not.
+
+THE MECHANICS: each worktree session worked on its own branch, so fan-in is ordinary git -- merge or rebase each branch back, one at a time. Background agents likewise leave you branches/diffs plus a final summary. If the tasks were truly independent (different files, different subsystems), merges are clean; if two agents touched the same code, you inherit **merge conflicts** that neither agent knew it was creating, because parallel workers cannot see each other''s in-flight changes.
+
+THE REAL BOTTLENECK: you still have to READ everything. Five agents can generate five diffs simultaneously, but one human reviews them serially -- so total wall-clock is roughly (longest generation) + (SUM of all reviews). Fan-out moves the constraint from Claude''s throughput to your attention; this is entry 4''s "attention is the scarce resource" showing up as schedule math.
+
+GUARDRAILS THAT KEEP FAN-IN CHEAP:
+- Orthogonal tasks: partition by directory/subsystem when writing the backlog, so conflicts are structurally impossible.
+- Small diffs: many focused tasks beat few sprawling ones -- review time scales with diff size, and badly.
+- Evidence over claims: have each agent end with what it changed AND how it verified (tests run, output shown), so review starts from proof instead of trust.
+- Integrate as results land rather than batching all merges to the end -- earlier merges shrink the surface later ones can conflict with.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (139, 'fan-in', 'The collection phase after fan-out: merging branches, reconciling conflicts, and reviewing results back into one line of work.'),
+  (139, 'integration cost', 'The hidden tax of parallel work -- merging, conflict resolution, and review -- paid AFTER generation finishes, and paid mostly serially.'),
+  (139, 'merge conflict', 'Git''s refusal to auto-combine two changes to the same lines; between parallel agents it means two workers unknowingly edited the same code.'),
+  (139, 'review bottleneck', 'The point where parallel output funnels through one serial reviewer -- the reason N agents do not make you N times faster.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(139, 'Five parallel agents each take 30 minutes to generate a diff, and each diff takes you 20 minutes to review. Roughly how long until everything is integrated?',
+ 'About 30 minutes -- everything ran in parallel',
+ 'About 50 minutes -- longest generation plus one review, since reviews also parallelize',
+ 'About 130 minutes -- roughly the longest generation (30) plus five serial reviews (100), because one human reads diffs one at a time',
+ 'About 250 minutes -- parallel agents always take 5x longer overall',
+ 2,
+ 'Generation parallelizes; your reading does not. Wall-clock is about max(generation) + sum(review) -- which is why the fan-in guardrails (orthogonal tasks, small diffs, evidence attached) target REVIEW cost, the term that actually dominates.');
