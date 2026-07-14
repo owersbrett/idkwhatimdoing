@@ -4852,3 +4852,66 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'About 250 minutes -- parallel agents always take 5x longer overall',
  2,
  'Generation parallelizes; your reading does not. Wall-clock is about max(generation) + sum(review) -- which is why the fan-in guardrails (orthogonal tasks, small diffs, evidence attached) target REVIEW cost, the term that actually dominates.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-08', 'qa', 'A parasite on the produce -- cyclospora, cyclosporiasis, and why it is a food outbreak and not a contagion');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(140, '2026-07-08', 1, 'What is cyclosporiasis and cyclospora?',
+'**Cyclospora** (full name *Cyclospora cayetanensis*) is a microscopic single-celled **parasite** -- a protozoan in the coccidian group -- that infects the lining of the human small intestine. **Cyclosporiasis** is the illness it causes. The naming follows a standard pattern: the organism is *Cyclospora*, and the "-iasis" suffix means "the disease of being infected by it" (compare *Giardia* -> *giardiasis*).
+
+HOW YOU GET IT: transmission is **fecal-oral** -- you ingest the parasite in food or water contaminated with infected feces. In practice that means **fresh produce**: documented outbreaks trace to imported raspberries, basil, cilantro, snow peas, and bagged leafy greens. A defining quirk is that it is NOT spread directly person-to-person. When passed in stool the parasite is an **oocyst** that is not yet infectious; it needs days to weeks in the environment to mature (**sporulate**) before it can infect anyone. That maturation delay is exactly why cyclospora appears as produce-and-water outbreaks rather than household contagion.
+
+SYMPTOMS: after roughly a week of incubation -- watery diarrhea that is often **prolonged and relapsing** (weeks-long, coming in waves if untreated), loss of appetite, weight loss, cramping, bloating, nausea, fatigue, sometimes a low-grade fever.
+
+DIAGNOSIS AND TREATMENT: it is easily missed on routine stool tests -- labs must specifically look for it (special ova-and-parasite testing, acid-fast staining, or molecular/PCR panels). Standard treatment is the antibiotic **TMP-SMX** (trimethoprim-sulfamethoxazole; Bactrim/co-trimoxazole), which clears it reliably where it would otherwise linger. Endemic in tropical/subtropical regions; in temperate countries it appears seasonally and via imported produce.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (140, 'protozoan parasite', 'A single-celled eukaryotic organism that lives in/on a host at the host''s expense. Cyclospora is one; so are Giardia and the malaria parasite.'),
+  (140, 'coccidian', 'A group of intestinal protozoan parasites (includes Cyclospora and Cryptosporidium) that reproduce via environmentally shed oocysts.'),
+  (140, 'oocyst', 'The tough encapsulated stage a coccidian parasite is shed in. For cyclospora it leaves the body NOT yet infectious.'),
+  (140, 'sporulation', 'The maturation an oocyst undergoes in the environment (days to weeks) to become infectious -- the delay that makes cyclospora a food/water outbreak rather than a person-to-person contagion.'),
+  (140, 'fecal-oral transmission', 'A route where a pathogen shed in feces is ingested via contaminated food, water, or hands.'),
+  (140, 'TMP-SMX', 'Trimethoprim-sulfamethoxazole (Bactrim / co-trimoxazole), the standard antibiotic treatment for cyclosporiasis.'),
+  (140, '-iasis', 'A medical suffix meaning "diseased condition caused by" -- attached to a parasite name to name its infection (cyclospora -> cyclosporiasis).');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(140, 'Why is cyclosporiasis spread through contaminated produce rather than directly from person to person?',
+ 'The parasite dies instantly outside a human host, so only fresh contact spreads it',
+ 'The oocyst shed in stool is not yet infectious and must sporulate in the environment for days to weeks before it can infect someone',
+ 'It is a virus, and viruses cannot survive on food surfaces',
+ 'Human stomach acid destroys it unless it is buffered by plant material',
+ 1,
+ 'Cyclospora is shed as an immature oocyst that needs days-to-weeks of environmental maturation (sporulation) to become infectious. That built-in delay means a freshly shed parasite cannot infect a nearby person, but it CAN contaminate produce or water that is eaten later -- hence food-and-water outbreaks, not household contagion.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-11', 'qa', 'P&L -- the running scoreboard of a trade');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(141, '2026-07-11', 1, 'In investing, what is P&L?',
+'**P&L** stands for **profit and loss** -- the running tally of how much money a position, or a whole portfolio, has made or lost. On a trading dashboard the "P&L" column is just shorthand for "how is this bet doing." It comes in two flavors that matter a lot:
+
+**UNREALIZED P&L** -- the gain or loss on paper for positions you STILL HOLD. Buy a stock at $100, it trades at $120, and you are sitting on +$20 of unrealized profit. The word "unrealized" is the warning label: it is not yours yet. If the price falls back to $105 before you sell, most of that gain evaporates. It is a mark-to-market snapshot, not cash.
+
+**REALIZED P&L** -- the gain or loss LOCKED IN because you actually closed the position (sold, or covered a short). This is the number that truly hits your account balance, and generally the one that triggers a taxable event. Realizing a gain converts paper profit into real profit; realizing a loss makes the loss permanent but can also offset other gains at tax time.
+
+WHERE THE TERM COMES FROM: accounting. A company''s **P&L statement** (a.k.a. income statement) reports revenue minus expenses over a period to show whether the business made money. Traders borrowed the phrase, so in investing "P&L" carries the same meaning -- money in versus money out -- applied to a position instead of a company.
+
+THE ONE THING TO INTERNALIZE: unrealized P&L is a hypothesis about your profit; realized P&L is the verdict. Plenty of traders watch a big unrealized gain and never sell, then give it all back. The number only becomes real when you close the trade.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (141, 'P&L (profit and loss)', 'The net gain or loss on a position or portfolio -- money out versus money in. Borrowed from the accounting "P&L statement."'),
+  (141, 'unrealized P&L', 'Paper gain/loss on a position you still hold, based on the current market price. Not cash; it can change or vanish before you sell.'),
+  (141, 'realized P&L', 'Gain/loss locked in by closing the position (selling or covering). This is what actually affects your balance and generally what taxes apply to.'),
+  (141, 'mark-to-market', 'Valuing an open position at its current market price to compute unrealized P&L, rather than at what you paid.'),
+  (141, 'taxable event', 'An action -- typically realizing a gain or loss by selling -- that triggers a tax consequence.'),
+  (141, 'P&L statement (income statement)', 'The accounting report of revenue minus expenses over a period; the origin of the trading term "P&L."');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(141, 'You bought a stock at $100 and it is now trading at $130, but you have not sold. What kind of P&L is your +$30, and what does that imply?',
+ 'Realized P&L -- the $30 is already in your account and cannot be lost',
+ 'Unrealized P&L -- it is a paper gain that can shrink or disappear before you actually sell',
+ 'A taxable event has occurred, so you owe tax on the $30 now',
+ 'Nothing -- P&L only exists once per year on a statement',
+ 1,
+ 'Because the position is still open, the $30 is UNREALIZED -- a mark-to-market snapshot, not cash. It can grow, shrink, or vanish before you close the trade, and it generally is not taxed until you realize it by selling.');
