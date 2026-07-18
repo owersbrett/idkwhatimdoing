@@ -4915,3 +4915,319 @@ INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, expla
  'Nothing -- P&L only exists once per year on a statement',
  1,
  'Because the position is still open, the $30 is UNREALIZED -- a mark-to-market snapshot, not cash. It can grow, shrink, or vanish before you close the trade, and it generally is not taxed until you realize it by selling.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-13', 'qa', 'What npx actually does when you run npx skills add');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(142, '2026-07-13', 1, 'When I run `npx skills add <something> --skill <name>`, is npx searching GitHub for open-source projects tied to what I wrote?',
+'No. `npx` itself does NO searching of any kind -- not GitHub, not by keyword. It is worth separating two layers that get blurred together.
+
+LAYER 1 -- what `npx skills` means. `npx` reads only the FIRST token (`skills`) and treats it as a PACKAGE NAME. It then does exactly three things: (1) looks up a package literally named `skills` in the npm registry (registry.npmjs.org); (2) downloads it into a cache if it is not already there; (3) runs the executable that package declares in its `bin` field, handing everything after the name -- `add <something> --skill <name>` -- to that program as arguments. That is the whole job of npx: resolve a NAME to published code and run it. It is not interpreting your words as a search query. In this case the name resolves to a real package, `skills`, published by vercel-labs. Typing `npx cowsay` would fetch the package named `cowsay`, nothing more clever.
+
+LAYER 2 -- what `skills add <something>` does. Everything after `skills` is handled by the skills CLI''s OWN code. `add`, `<something>`, and `--skill <name>` are that program''s arguments. Whatever lookup happens -- matching `<something>` to a source, pulling files, resolving a named skill -- is logic the CLI author wrote. Typically it consults a curated index/registry the project maintains (or a specific repo you point it at), NOT a live "search all of GitHub for anything related to these words." Being that catalog is the whole point of the skills project.
+
+THE DISTINCTION TO INTERNALIZE: npx = "get and run this one named package." The package''s own CLI = "interpret these remaining arguments however I was programmed to." The feeling that "it found the thing I described" comes from the CLI''s catalog lookup, not from npx guessing at your prose.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (142, 'npm registry', 'The central server (registry.npmjs.org) that maps a package NAME to its published code. Both npm and npx resolve names here.'),
+  (142, 'npx', 'A runner that fetches a package by name and executes its bin command in one step, without a permanent install.'),
+  (142, 'bin field', 'The entry in a package''s package.json declaring which executable(s) it exposes. This is what npx actually runs.'),
+  (142, 'CLI arguments (argv)', 'The tokens after the command name (e.g. add, --skill <name>), passed TO the program -- not interpreted by npx.'),
+  (142, 'package resolution', 'Turning a name like `skills` into a specific downloadable version from the registry.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(142, 'When you run `npx skills add react-stuff`, how does npx interpret the word `skills`?',
+ 'As a keyword it searches for across GitHub repositories',
+ 'As a package name it resolves against the npm registry, downloads, and runs',
+ 'As a subcommand built into npx itself',
+ 'As a path to a local folder of skills',
+ 1,
+ 'npx reads only the first token as a PACKAGE NAME, resolves it in the npm registry, downloads it, and runs its bin executable -- passing `add react-stuff` as arguments to that program. Any GitHub/catalog lookup is done by the skills CLI''s own code, not by npx.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(143, '2026-07-13', 2, 'What is a customer profile?',
+'A CUSTOMER PROFILE is a structured description of who your customer is -- a fact sheet about a person (or a whole segment) capturing what they need, how they behave, and why they buy, so you can make decisions about product, marketing, and support without guessing. At its simplest it answers: "Who exactly are we serving, and what do we know about them?" It turns a fuzzy audience ("people who like potatoes") into something specific enough to design for.
+
+There are TWO SENSES of the term, and they matter in different contexts.
+
+1. THE MARKETING / BUSINESS SENSE -- a description of a TYPE of customer. This is the strategic one; it bundles the traits that define a segment: DEMOGRAPHICS (measurable facts -- age, location, income, job title); PSYCHOGRAPHICS (values, interests, motivations -- the WHY); BEHAVIOR (what they actually do -- how often they buy, how they found you, repeat vs. one-time); and GOALS AND PAIN POINTS (what they are trying to achieve and what currently frustrates them -- the part your product resolves). When a marketing profile is fleshed out into a semi-fictional named "person" with a story, it is called a BUYER PERSONA -- a storytelling wrapper around the same data, made vivid so a team can empathize with it.
+
+2. THE TECHNICAL / DATA SENSE -- a stored RECORD of one real customer. This is the one you hit in code, e.g. a Shopify Hydrogen storefront. Here a customer profile is a concrete data record for one actual person: their account -- email, name, saved addresses, order history, payment methods, preferences, loyalty status. It is a row (or document) in a database, keyed to a real individual. Shopify literally exposes a `Customer` object with exactly these fields.
+
+THE DISTINCTION TO INTERNALIZE: the marketing profile describes a KIND of person you want to reach (a template for a segment); the data profile is the stored record of ONE specific person you already have (a real account). Same words, two altitudes -- one is a strategy tool, the other a database entity. Context makes which one obvious: a marketer sketching an audience vs. a developer querying an account.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (143, 'customer profile', 'A structured description of a customer: either a TYPE (marketing segment) or a stored RECORD of one real person (data/account).'),
+  (143, 'segment', 'A group of customers who share enough traits to be targeted the same way; a marketing profile usually describes a segment.'),
+  (143, 'demographics', 'Measurable, factual customer traits -- age, location, income, job title, language.'),
+  (143, 'psychographics', 'Attitudinal traits -- values, motivations, interests. The WHY behind behavior, as opposed to the factual WHO.'),
+  (143, 'buyer persona', 'A semi-fictional named character built from a customer profile, used to make a segment feel real and relatable to a team.'),
+  (143, 'pain point', 'A specific frustration or unmet need a customer has, which a product aims to solve.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(143, 'A marketer says "our customer profile is Sam, 34, a self-taught dev who feels lost with new tools," while a developer says "pull up the customer profile for order #4471." What is the key difference between these two uses?',
+ 'They are the same thing; the developer just abbreviated it',
+ 'The marketer describes a TYPE/segment of person to reach (often a buyer persona); the developer means a stored data RECORD of one real, specific customer',
+ 'The marketer is wrong -- a customer profile can only mean a database record',
+ 'The developer is wrong -- a customer profile is never stored in a database',
+ 1,
+ 'Customer profile has two senses at different altitudes. The marketing sense is a template describing a KIND of customer (demographics, psychographics, goals) -- and a named story version is a buyer persona. The data sense is the concrete stored RECORD of ONE real account (email, orders, addresses). Both are valid; context tells you which.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(144, '2026-07-13', 3, 'What is an acquisition channel?',
+'An ACQUISITION CHANNEL is a specific pathway through which NEW customers first find and come to you -- the road a stranger travels to become a customer. It answers "How do people discover us?" and each distinct answer is a separate channel.
+
+COMMON CHANNELS: ORGANIC SEARCH / SEO (they Google something and land on you unpaid); PAID ADS / SEM / social ads (you pay for placement -- Google Ads, Meta, TikTok); SOCIAL / CONTENT (a post, video, or article pulls them in); REFERRAL / word of mouth (an existing customer or partner sends them); EMAIL (a newsletter that converts a reader into a buyer); DIRECT (they already know the name and type it in); MARKETPLACES (they find you inside a bigger platform -- an app store, Shopify shop surfaces).
+
+WHY THE TERM MATTERS: channels let you measure WHERE growth actually comes from, so you can spend on what works. The metric attached is usually CUSTOMER ACQUISITION COST (CAC) -- how much you spend per channel to land one customer. A channel with cheap, high-quality customers is one you pour more into; an expensive one you cut. Note the scope: acquisition is specifically about FIRST contact / becoming a customer -- distinct from retention (keeping them) and from the sales motion (HOW the deal closes once they arrive).');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (144, 'acquisition channel', 'A distinct pathway through which new customers first discover and reach a business (SEO, paid ads, referral, email, direct, marketplaces).'),
+  (144, 'customer acquisition cost (CAC)', 'The average amount spent to acquire one new customer, often measured per channel to compare efficiency.'),
+  (144, 'SEO (organic search)', 'Search-engine optimization -- earning unpaid search traffic so people find you via Google/Bing without you paying per click.'),
+  (144, 'SEM / paid search', 'Search-engine marketing -- paying for ad placement (e.g. Google Ads) to appear in search results.'),
+  (144, 'referral', 'An acquisition channel where existing customers or partners send new people your way (word of mouth).');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(144, 'A business notices most new customers arrive by Googling a problem and clicking an unpaid result. Which acquisition channel is that, and what metric would tell them if it is worth investing in more?',
+ 'Paid search; measured by click-through rate',
+ 'Organic search / SEO; judged largely by customer acquisition cost (CAC) versus the value of customers it brings',
+ 'Referral; measured by net promoter score',
+ 'Direct traffic; measured by bounce rate',
+ 1,
+ 'Unpaid Google results = organic search / SEO. To decide whether to invest more, you compare its customer acquisition cost (CAC) and the quality/value of the customers it produces against other channels. Cheap, high-quality customers justify pouring in more effort.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(145, '2026-07-13', 4, 'What is the sales motion?',
+'A SALES MOTION is the repeatable WAY a company sells -- the standard sequence of steps and the style of selling that moves someone from "interested" to "paying." It is not WHERE they came from (that is the acquisition channel) but HOW the deal actually gets closed.
+
+THE COMMON ARCHETYPES: SELF-SERVE / PRODUCT-LED -- the customer signs up and buys themselves, no human involved (a storefront checkout, a free-trial SaaS); low touch, high volume. INSIDE SALES -- a salesperson works the deal remotely via calls, email, and demos; mid-size deals. FIELD / ENTERPRISE SALES -- high-touch, often in-person, long cycles, big contracts, multiple decision-makers. And the broader framing SALES-LED vs. PRODUCT-LED: does a PERSON drive the sale, or does the PRODUCT itself (free tier, trial) do the convincing?
+
+WHY "MOTION": the word is deliberate -- it implies a CHOREOGRAPHED, REPEATABLE set of moves, a play you run again and again, not a one-off. Choosing the right motion is mostly a function of PRICE and COMPLEXITY: a cheap, simple product wants self-serve; an expensive, complex one needs humans in the loop. A company can run more than one motion at once (e.g. self-serve for small customers, enterprise sales for big ones).');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (145, 'sales motion', 'The repeatable, standardized way a company sells -- the sequence of steps and style of selling that closes a deal.'),
+  (145, 'self-serve / product-led', 'A sales motion where customers buy on their own with no salesperson; the product (trial, free tier, easy checkout) does the selling. Low touch, high volume.'),
+  (145, 'inside sales', 'A sales motion where a salesperson works deals remotely (calls, email, demos), typically for mid-size deals.'),
+  (145, 'enterprise / field sales', 'A high-touch sales motion with long cycles, large contracts, and multiple decision-makers, often involving in-person selling.'),
+  (145, 'sales cycle', 'The elapsed time and steps from first interest to a closed deal; longer for enterprise, near-instant for self-serve.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(145, 'A company sells a $15/month app where users sign up, start a free trial, and pay by card with no salesperson ever involved. Which sales motion is this, and what mainly drives that choice?',
+ 'Enterprise / field sales, driven by contract size',
+ 'Self-serve / product-led, driven by the low price and simplicity of the product',
+ 'Inside sales, driven by the need for demos',
+ 'Referral motion, driven by word of mouth',
+ 1,
+ 'No human in the loop plus a low, simple price is the signature of a self-serve / product-led motion -- the product itself does the selling. Motion choice tracks price and complexity: cheap and simple favors self-serve; expensive and complex needs inside or enterprise sales.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(146, '2026-07-13', 5, 'What is the intranet?',
+'An INTRANET is a private network and set of internal websites/tools that only people INSIDE an organization can access -- the company''s own internal web, walled off from the public internet.
+
+THE CONTRAST MAKES IT CLICK: INTERNET -- public, global, anyone can reach it. INTRANET -- private, internal, only employees (behind login or on the company network). EXTRANET -- the middle ground: a private network extended to SPECIFIC outside partners (a supplier or client portal).
+
+WHAT LIVES ON IT: the employee handbook, HR portals, internal wikis and docs, org charts, project dashboards, internal announcements, shared tools -- the stuff useful to staff but that should not be public. Historically intranets were literal separate physical networks; today an "intranet" is often just a set of access-controlled web apps (Notion, SharePoint, an internal dashboard) gated behind company login. The one-line mental model: the intranet is the company''s PRIVATE version of the web, for insiders only.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (146, 'intranet', 'A private, access-controlled internal network and set of websites/tools usable only by people inside an organization.'),
+  (146, 'extranet', 'A private network extended to specific outside partners (suppliers, clients) -- between a fully private intranet and the public internet.'),
+  (146, 'internet', 'The public, global network anyone can access -- the contrast case that defines what makes an intranet private.'),
+  (146, 'access control', 'Restricting who can reach a resource (via login, network membership, permissions) -- the mechanism that makes an intranet private.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(146, 'A company gives its suppliers a private, login-protected portal to submit invoices -- outsiders, but only specific approved ones. Is that an intranet, an extranet, or the internet?',
+ 'Intranet, because it is private and login-protected',
+ 'Extranet, because a private network is extended to specific outside partners rather than to the general public or to employees only',
+ 'The internet, because outside parties can reach it',
+ 'None of these -- a portal is not a network concept',
+ 1,
+ 'An intranet is for insiders/employees only; the public internet is for anyone. When a private network is opened to SPECIFIC external partners (like suppliers using an invoice portal), that middle ground is an extranet.');
+
+INSERT INTO days (date, kind, title) VALUES
+  ('2026-07-15', 'qa', 'Bicep -- describing Azure infrastructure in a file');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(147, '2026-07-15', 1, 'What is a Bicep file?',
+'A BICEP FILE (.bicep) is a text file that DESCRIBES cloud infrastructure on Microsoft Azure -- which resources should exist (a database, a storage account, a web app), with what settings. You hand the file to Azure and Azure makes reality match the file. That practice is called INFRASTRUCTURE AS CODE (IaC): instead of clicking around a web portal to create resources, you declare them in a file that can be version-controlled, reviewed, and re-run.
+
+THE KEY WORD IS DECLARATIVE. A Bicep file does not say "step 1: create the server, step 2: configure it." It says "a server with these properties should exist," and Azure''s deployment engine figures out the steps -- creating what is missing, updating what drifted, leaving alone what already matches. Running the same file twice is safe (this property is called IDEMPOTENCE).
+
+WHERE IT SITS: Azure''s native deployment format is ARM TEMPLATES -- verbose, hard-to-write JSON. Bicep is a cleaner language that COMPILES DOWN to ARM JSON, the same way TypeScript compiles to JavaScript (hence the gym joke in the name: Bicep is stronger ARM). You deploy with the Azure CLI, e.g. `az deployment group create --template-file main.bicep`.
+
+THE FAMILY IT BELONGS TO: every major cloud has this idea. Terraform (works across all clouds), AWS CloudFormation/CDK (Amazon), Pulumi (real programming languages). Bicep is the Azure-only, Microsoft-official member. If you are not deploying to Azure, you will never touch one -- but the underlying concept (declare infrastructure in reviewable files, let the platform reconcile) is one of the most transferable ideas in modern ops.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (147, 'Bicep', 'Microsoft''s language for declaring Azure infrastructure in .bicep files; compiles to ARM template JSON.'),
+  (147, 'infrastructure as code (IaC)', 'Defining servers, databases, and other cloud resources in version-controlled files instead of creating them by hand in a portal.'),
+  (147, 'declarative', 'Describing the desired END STATE ("this should exist with these settings") and letting the tool figure out the steps, versus imperative step-by-step instructions.'),
+  (147, 'ARM template', 'Azure Resource Manager''s native JSON deployment format -- powerful but verbose; the thing Bicep compiles into.'),
+  (147, 'idempotence', 'The property that running the same operation repeatedly produces the same result -- deploying an unchanged Bicep file twice changes nothing the second time.'),
+  (147, 'Terraform', 'The most widely used infrastructure-as-code tool; cloud-agnostic, whereas Bicep is Azure-only.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(147, 'A teammate deploys the same unchanged main.bicep file twice in a row. What happens the second time, and why?',
+ 'Azure creates duplicate copies of every resource, because each deployment runs the file''s steps again',
+ 'Nothing changes, because Bicep is declarative -- Azure compares the declared state to what exists and finds no differences to reconcile',
+ 'The deployment fails with a conflict error, because the resources already exist',
+ 'Azure deletes and recreates each resource to guarantee a clean state',
+ 1,
+ 'Bicep files declare a desired end state rather than listing steps to execute. Azure reconciles reality against the declaration: missing things get created, drifted things get updated, matching things are left alone. Re-running an unchanged file is a no-op -- that safety is idempotence.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(148, '2026-07-15', 2, 'What is an Azure Pipeline?',
+'An AZURE PIPELINE is Microsoft''s CI/CD service -- an automated assembly line that takes your code from "pushed to the repo" to "built, tested, and deployed," with no human running the steps by hand. It is one product inside AZURE DEVOPS (Microsoft''s suite of dev tools: repos, boards, artifacts, pipelines).
+
+THE CORE IDEA IS CI/CD. CONTINUOUS INTEGRATION (CI): every time code lands, automatically compile it and run the tests, so breakage is caught in minutes, not at release time. CONTINUOUS DELIVERY/DEPLOYMENT (CD): once the build passes, automatically package it and push it out to an environment (staging, then production). A pipeline is the recipe for that whole flow.
+
+HOW IT IS DEFINED: as a YAML file, `azure-pipelines.yml`, checked into the repo -- pipeline-as-code, the same version-controlled-file philosophy as Bicep. The file declares a TRIGGER (e.g. "run on every push to main"), then STAGES (Build, Test, Deploy) made of JOBS made of STEPS (run this script, run these tests, publish this artifact). When the trigger fires, Azure spins up a fresh AGENT -- a clean virtual machine -- that checks out your code and executes the steps, so builds do not depend on whatever is installed on someone''s laptop.
+
+THE FAMILY IT BELONGS TO: GitHub Actions, GitLab CI, Jenkins, CircleCI all do the same job -- YAML in the repo, runs on push, builds and deploys. If you know one, you roughly know them all. And the pair with Bicep is natural: the pipeline is often the thing that RUNS your Bicep file, so both the infrastructure and the process that deploys it live as reviewable files in the repo.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (148, 'Azure Pipelines', 'Microsoft''s CI/CD service (part of Azure DevOps): automatically builds, tests, and deploys code when changes are pushed, driven by an azure-pipelines.yml file in the repo.'),
+  (148, 'CI/CD', 'Continuous Integration (auto-build and test every change) plus Continuous Delivery/Deployment (auto-package and release what passes) -- the automation backbone of modern shipping.'),
+  (148, 'pipeline', 'The defined, automated sequence of stages (build, test, deploy) that code flows through from commit to release.'),
+  (148, 'build agent', 'The clean machine (VM or container) a CI service spins up to check out your code and execute pipeline steps, so builds are reproducible and not dependent on any one laptop.'),
+  (148, 'YAML', 'A human-readable, indentation-based configuration format; the standard language for defining pipelines (azure-pipelines.yml, GitHub Actions workflows).'),
+  (148, 'artifact (build artifact)', 'The packaged output a build produces (a compiled binary, a container image, a zip) that later stages deploy.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(148, 'A team notices bugs only surface when someone remembers to manually run the test suite before a release. Which part of an Azure Pipeline most directly fixes this, and how?',
+ 'The build agent, by providing a faster machine to run tests on',
+ 'The CI trigger, by automatically building and running the tests on every push so breakage is caught within minutes of the change',
+ 'The artifact stage, by packaging the code so tests are unnecessary',
+ 'The YAML file, by documenting the manual steps for developers to follow',
+ 1,
+ 'This is the exact problem Continuous Integration exists for: a trigger fires the pipeline on every push, so the build-and-test steps run automatically and immediately. Agents, artifacts, and YAML are how the pipeline works, but the on-every-push automatic test run is what removes the "only if someone remembers" failure mode.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(149, '2026-07-15', 3, 'What is Azure DevOps?',
+'AZURE DEVOPS is Microsoft''s all-in-one suite of software TEAM tools -- the umbrella product that Azure Pipelines lives inside. It is not cloud hosting (that is Azure itself); it is the tooling around BUILDING software: planning it, storing the code, building it, testing it, and shipping it.
+
+THE FIVE SERVICES UNDER THE UMBRELLA: AZURE BOARDS -- work tracking: backlogs, sprints, kanban boards (Microsoft''s Jira). AZURE REPOS -- hosted Git repositories (Microsoft''s GitHub-in-DevOps). AZURE PIPELINES -- CI/CD, the automated build-test-deploy assembly line. AZURE ARTIFACTS -- private package feeds (your own npm/NuGet registry). AZURE TEST PLANS -- structured manual/exploratory test management.
+
+THE CONFUSING NAMING, UNTANGLED: "DevOps" the CULTURE means developers and operations working as one team with heavy automation. Azure DevOps the PRODUCT is just Microsoft''s branded toolsuite for that (it used to be called Team Foundation Server / VSTS). And note the overlap: Microsoft ALSO owns GitHub, which covers the same ground (GitHub Issues ~ Boards, GitHub repos ~ Repos, GitHub Actions ~ Pipelines). New projects increasingly land on GitHub; Azure DevOps remains huge in enterprises already invested in it. You can mix and match -- e.g. code on GitHub, pipelines in Azure DevOps.
+
+ONE-LINE MENTAL MODEL: Azure = where your software RUNS. Azure DevOps = where your software is PLANNED, STORED, and BUILT.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (149, 'Azure DevOps', 'Microsoft''s suite of team software tools -- Boards (planning), Repos (Git hosting), Pipelines (CI/CD), Artifacts (package feeds), Test Plans -- distinct from Azure the cloud host.'),
+  (149, 'DevOps (culture)', 'The practice of developers and operations working as one team with heavy automation of build, test, deploy, and monitoring -- the philosophy the product is named after.'),
+  (149, 'Azure Boards', 'Azure DevOps'' work-tracking service: backlogs, sprints, kanban -- comparable to Jira.'),
+  (149, 'Azure Repos', 'Hosted private Git repositories inside Azure DevOps.'),
+  (149, 'Azure Artifacts', 'Private package feeds (npm, NuGet, Maven, pip) so teams can publish and consume internal packages.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(149, 'A teammate says "our app is deployed on Azure DevOps." Why is that phrasing off?',
+ 'It is fine -- Azure DevOps is where applications are hosted',
+ 'Azure DevOps is the toolsuite where code is planned, stored, and built; apps RUN on Azure (the cloud platform) -- the pipeline in DevOps deploys TO Azure',
+ 'Azure DevOps was discontinued when Microsoft bought GitHub',
+ 'Apps can only be deployed from GitHub Actions, not Azure DevOps',
+ 1,
+ 'Azure DevOps and Azure are different products that happen to share a brand. DevOps holds the repos, boards, and CI/CD pipelines -- the factory. Azure is the cloud that hosts the running app -- the destination the factory ships to.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(150, '2026-07-15', 4, 'What is the Azure Portal?',
+'THE AZURE PORTAL (portal.azure.com) is the web-based control panel for Azure -- the point-and-click GUI where you can see and manage everything in your Azure account: create resources, browse what exists, check costs, view logs and metrics, set permissions.
+
+IT IS ONE OF SEVERAL DOORS INTO THE SAME HOUSE. Everything in Azure is ultimately driven by one management API (Azure Resource Manager), and there are multiple clients for it: the PORTAL (web GUI -- visual, discoverable), the AZURE CLI (`az ...` commands in a terminal -- scriptable), POWERSHELL modules, SDKs (code), and IaC files like BICEP. Creating a storage account via the portal, the CLI, or a Bicep deployment produces the identical resource -- just via different doors.
+
+WHEN EACH DOOR FITS: the portal is best for EXPLORING and LEARNING (seeing what options exist), one-off checks, dashboards, and emergencies. But clicking is not repeatable or reviewable -- nobody can code-review your mouse. So the mature workflow is: explore in the portal, then CAPTURE the result as code (Bicep/CLI in a pipeline) for anything you will do more than once. Portal-only infrastructure that nobody wrote down is affectionately called CLICK-OPS, and it is how teams end up with mystery resources no one can rebuild.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (150, 'Azure Portal', 'The web GUI (portal.azure.com) for viewing and managing everything in an Azure account -- one of several clients over the same management API.'),
+  (150, 'Azure CLI', 'The `az` command-line tool for managing Azure from a terminal -- same capabilities as the portal, but scriptable and repeatable.'),
+  (150, 'Azure Resource Manager (ARM)', 'The single management layer/API underneath all the Azure clients -- portal, CLI, SDKs, and Bicep all talk to it.'),
+  (150, 'click-ops', 'Managing infrastructure by clicking in a web console instead of code -- fast for one-offs, but unrepeatable, unreviewable, and undocumented.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(150, 'You create a storage account by clicking through the Azure Portal, and a teammate creates an identical one with a Bicep file. What is the difference in the resulting resource?',
+ 'The portal one is a lightweight development version; Bicep creates production-grade resources',
+ 'None -- both are clients over the same Azure Resource Manager API and produce identical resources; the difference is that the Bicep version is repeatable and reviewable',
+ 'The Bicep one runs faster because it skips the GUI',
+ 'The portal one cannot be managed by the CLI afterward',
+ 1,
+ 'Portal, CLI, SDKs, and Bicep are all just different doors into the same management API (Azure Resource Manager), so the resource is identical. What differs is the PROCESS: clicks are one-off and undocumented (click-ops), while a Bicep file is version-controlled, code-reviewable, and re-runnable.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(151, '2026-07-15', 5, 'What is AKS?',
+'AKS is AZURE KUBERNETES SERVICE -- Azure''s managed offering of KUBERNETES, the industry-standard system for running fleets of CONTAINERS across a cluster of machines.
+
+BUILD UP THE LAYERS: a CONTAINER packages an app with everything it needs to run (via Docker), so it runs identically anywhere. Great -- but once you have many containers across many machines, someone must decide where each runs, restart crashed ones, scale copies up and down with load, and route traffic among them. That "someone" is an ORCHESTRATOR, and KUBERNETES (K8s) is the one that won. It runs on a CLUSTER: a CONTROL PLANE (the brain) managing WORKER NODES (the machines your containers actually run on).
+
+WHAT "MANAGED" BUYS YOU: running the Kubernetes control plane yourself -- upgrades, availability, certificates, etcd backups -- is genuinely hard. With AKS, AZURE runs the control plane for you (free, even); you pay for and manage just the worker node VMs. Every cloud has the same product: AWS has EKS, Google has GKE, Azure has AKS.
+
+THE HONEST CAVEAT: Kubernetes is powerful and complex -- YAML manifests, networking, RBAC, a real learning curve. It shines for many-service systems and teams that need fine-grained control. For "I just have a container and want it running," Azure offers simpler rungs (Container Apps, App Service) -- climbing all the way to AKS is often overkill for small projects.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (151, 'AKS (Azure Kubernetes Service)', 'Azure''s managed Kubernetes: Azure operates the control plane, you manage and pay for the worker nodes your containers run on.'),
+  (151, 'Kubernetes (K8s)', 'The industry-standard container orchestrator -- schedules containers across a cluster, restarts failures, scales with load, routes traffic.'),
+  (151, 'orchestrator', 'Software that manages many containers across many machines -- placement, health, scaling, networking -- so humans do not do it by hand.'),
+  (151, 'cluster', 'A group of machines managed as one unit: a control plane (brain) plus worker nodes (muscle) where workloads actually run.'),
+  (151, 'control plane', 'The managing brain of a cluster -- the components that decide what runs where and keep actual state matching desired state.'),
+  (151, 'node (worker node)', 'An individual machine (usually a VM) in a cluster that runs the actual containers.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(151, 'In AKS, what does the "managed" part mean -- what does Azure run for you, and what remains yours?',
+ 'Azure runs everything including your application code; you only write YAML',
+ 'Azure operates the Kubernetes control plane (upgrades, availability, the cluster brain); you manage and pay for the worker nodes and what you deploy onto them',
+ 'Azure manages the worker nodes; you must host the control plane yourself',
+ '"Managed" just means it appears in the Azure Portal',
+ 1,
+ 'The hard, thankless part of Kubernetes is operating the control plane -- AKS takes that over (Azure even runs it free). The worker node VMs where your containers execute, and the workloads themselves, remain your responsibility and your bill.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(152, '2026-07-15', 6, 'What is a Container App (Azure Container Apps)?',
+'AZURE CONTAINER APPS is Azure''s "just run my container" service -- a SERVERLESS container platform. You hand Azure a container image and say "run this, give it a URL, scale it for me," and Azure handles all the machinery underneath. A "container app" is one such deployed container workload.
+
+THE PITCH IN ONE CONTRAST: it is Kubernetes power WITHOUT Kubernetes ops. Under the hood, Container Apps actually RUNS on Kubernetes (plus KEDA for event-driven scaling and Dapr for microservice plumbing), but all of that is hidden -- no cluster to create, no nodes to patch, no K8s YAML. AKS gives you the whole cockpit; Container Apps gives you a steering wheel.
+
+THE HEADLINE FEATURE IS SCALE-TO-ZERO: if no traffic is coming in, Azure can stop your container entirely and you pay NOTHING; when a request arrives it spins back up. Scaling is driven by HTTP traffic, queue length, or other events (that is KEDA). This makes it a natural fit for APIs, webhooks, background workers, and microservices with bursty or low traffic.
+
+WHERE IT SITS ON AZURE''S LADDER OF "WAYS TO RUN CODE" (least to most control): AZURE FUNCTIONS -- run a single function on a trigger. APP SERVICE -- run a web app from code, PaaS-style. CONTAINER APPS -- run any container, serverless, scale-to-zero. AKS -- run a full Kubernetes cluster you control. The rule of thumb: start as low on the ladder as your requirements allow; climb only when you hit a wall.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (152, 'Azure Container Apps', 'Azure''s serverless container platform: give it a container image, it runs it with a URL and event-driven autoscaling -- Kubernetes underneath, but fully hidden.'),
+  (152, 'serverless', 'A model where the cloud manages all the machines and you pay per use -- servers exist, you just never see or manage them.'),
+  (152, 'scale-to-zero', 'Automatically stopping all instances when there is no traffic (cost drops to zero) and starting them again on the next request.'),
+  (152, 'KEDA', 'Kubernetes Event-Driven Autoscaling -- the open-source component that scales workloads based on events like queue length or HTTP load; built into Container Apps.'),
+  (152, 'container image', 'The packaged, shippable snapshot of an app and its dependencies (built with Docker) that a container platform runs.'),
+  (152, 'cold start', 'The startup delay when a scaled-to-zero app must spin up to serve the first incoming request -- the tradeoff for paying nothing while idle.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(152, 'Your API gets bursts of traffic a few hours a day and nothing overnight. Why might Azure Container Apps fit better than AKS here?',
+ 'Container Apps runs containers faster than Kubernetes can',
+ 'Container Apps can scale to zero overnight (you pay nothing while idle) and needs no cluster operations, while AKS keeps billable nodes running and puts Kubernetes management on you',
+ 'AKS cannot run HTTP APIs, only background jobs',
+ 'Container Apps is the only Azure service that supports Docker images',
+ 1,
+ 'For bursty, sometimes-idle workloads, scale-to-zero is the killer feature: idle time costs nothing, and scaling with traffic is automatic (via KEDA). AKS worker nodes bill around the clock and the cluster is yours to operate -- power you would be paying for without needing. The tradeoff is a cold start on the first request after idle.');
+
+INSERT INTO entries (id, day_date, position, question, answer) VALUES
+(153, '2026-07-15', 7, 'What is a storage account (Azure)?',
+'An AZURE STORAGE ACCOUNT is the container Azure gives you for storing DATA (as opposed to running code) -- one named account, with one wall of settings around it, that can hold several kinds of storage inside.
+
+THE FOUR THINGS INSIDE ONE ACCOUNT: BLOB STORAGE -- files/objects of any kind (images, videos, backups, logs), organized in containers, addressed by URL; this is Azure''s equivalent of AWS S3 and by far the most-used part. FILE SHARES -- network drives you can mount like a shared folder (SMB). QUEUES -- simple message queues so one part of a system can leave work for another. TABLES -- a basic NoSQL key-value store. ("BLOB" = Binary Large OBject -- storage-speak for "any file, treated as opaque bytes.")
+
+THE ACCOUNT ITSELF is where the account-wide decisions live: a globally unique NAME (it becomes part of the URL, e.g. `mystuff.blob.core.windows.net`), the REGION the data physically sits in, the REDUNDANCY level -- how many copies Azure keeps and where (LRS: three copies in one datacenter; GRS: also copied to a second geographic region, surviving a regional disaster), and ACCESS TIERS for cost (hot = frequently read; cool/archive = cheaper to keep, slower or costlier to retrieve).
+
+MENTAL MODEL: compute services (Container Apps, AKS, Functions) are deliberately DISPOSABLE -- containers restart and their local disk vanishes. The storage account is the durable shelf that outlives them: apps stay stateless, and everything that must survive gets written to storage.');
+
+INSERT INTO vocab (entry_id, term, def) VALUES
+  (153, 'storage account', 'Azure''s top-level container for data services -- blobs, file shares, queues, tables -- with account-wide settings for name, region, redundancy, and access tiers.'),
+  (153, 'blob storage', 'Object storage for files of any kind, addressed by URL -- Azure''s equivalent of AWS S3. BLOB = Binary Large Object.'),
+  (153, 'object storage', 'Storing files as opaque objects fetched whole by key/URL over HTTP, rather than as blocks on a disk -- cheap, effectively unlimited, the cloud-native way to store files.'),
+  (153, 'redundancy (LRS/GRS)', 'How many copies of your data Azure keeps and where -- from three copies in one datacenter (LRS) to geo-replicated copies in a second region (GRS).'),
+  (153, 'access tier', 'A cost/speed setting for stored data: hot (frequent reads), cool, and archive (cheap to keep, slow or costly to retrieve).'),
+  (153, 'stateless', 'An app design where nothing important lives on the app''s own disk -- durable data goes to external storage, so instances can be killed and replaced freely.');
+
+INSERT INTO quizzes (entry_id, prompt, opt_a, opt_b, opt_c, opt_d, answer, explanation) VALUES
+(153, 'Your container app writes user uploads to its own filesystem, and they vanish whenever the app restarts or scales. What is the idiomatic Azure fix?',
+ 'Increase the container''s disk size so files persist longer',
+ 'Write uploads to blob storage in a storage account -- durable object storage that outlives any container instance -- keeping the app itself stateless',
+ 'Disable scaling so the same container instance always handles every request',
+ 'Store the files in a queue inside the storage account',
+ 1,
+ 'Container filesystems are ephemeral by design -- instances are disposable. Durable data belongs in the storage account, and files/uploads specifically belong in blob storage, which any instance can read via URL. That keeps the app stateless, so restarts and scale-out stop losing data. Queues carry messages, not files.');
